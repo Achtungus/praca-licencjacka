@@ -8,9 +8,9 @@ using ScriptsOfTribute.Board.Cards;
 
 namespace Bots;
 
-public interface IGamePhaseStrategy
+interface IGamePhaseStrategy
 {
-    public int BasicProperties(SeededGameState gameState);
-    public int PatronsBonuses(SeededGameState gameState);
-    public int CardsValues(SeededGameState gameState, int startRoundcardsCount);
+    int BasicProperties(SeededGameState gameState);
+    int PatronsBonuses(SeededGameState gameState);
+    int CardsValues(SeededGameState gameState, int startRoundcardsCount);
 }
