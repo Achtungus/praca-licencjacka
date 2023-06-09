@@ -130,7 +130,7 @@ public class GamePhaseTierList
         new PhaseCardTier("Imprisonment", PatronId.TREASURY, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION),
         new PhaseCardTier("Ragpicker", PatronId.TREASURY, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION),
         new PhaseCardTier("Tithe", PatronId.TREASURY, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION),
-        new PhaseCardTier("Writ of Coin", PatronId.TREASURY, GamePhaseTierEnum.A, GamePhaseTierEnum.C, GamePhaseTierEnum.UNKNOWN),
+        new PhaseCardTier("Writ of Coin", PatronId.TREASURY, GamePhaseTierEnum.S, GamePhaseTierEnum.C, GamePhaseTierEnum.UNKNOWN),
         new PhaseCardTier("Unknown", PatronId.TREASURY, GamePhaseTierEnum.UNKNOWN, GamePhaseTierEnum.UNKNOWN, GamePhaseTierEnum.UNKNOWN)
     };
 
