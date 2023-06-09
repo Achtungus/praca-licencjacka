@@ -140,14 +140,14 @@ public class GamePhaseStrategyMid : IGamePhaseStrategy
             }
         }
         if (enemyPatronDist == 1) return 3 * heuristicMin;
-        if (enemyPatronDist == 2) val = heuristicMin;
+        if (enemyPatronDist == 2) val = -200;
         if (ourPatrons == 4) val = heuristicMax;
         return val;
     }
 
     public int CardsValues(SeededGameState gameState, int startRoundcardsCount)
     {
-        cardLimit = startRoundcardsCount;
+        cardLimit = Math.Max(startRoundcardsCount, 16);
         int val = 0;
         List<UniqueCard> ourCards = gameState.CurrentPlayer.Hand.Concat(gameState.CurrentPlayer.Played.Concat(gameState.CurrentPlayer.CooldownPile.Concat(gameState.CurrentPlayer.DrawPile))).ToList();
         List<UniqueCard> enemyCards = gameState.EnemyPlayer.Hand.Concat(gameState.EnemyPlayer.Played).Concat(gameState.EnemyPlayer.CooldownPile.Concat(gameState.EnemyPlayer.DrawPile)).ToList();
@@ -157,7 +157,7 @@ public class GamePhaseStrategyMid : IGamePhaseStrategy
         if (cnt > cardLimit) val -= (cnt - cardLimit) * overCardLimitPenalty;
         foreach (UniqueCard card in ourCards)
         {
-            val += (int)GamePhaseTierList.GetCardTier(card.Name, 0);
+            val += (int)GamePhaseTierList.GetCardTier(card.Name, 1);
             if (card.Deck != PatronId.TREASURY)
             {
                 if (ourCombos.ContainsKey(card.Deck))
@@ -171,9 +171,17 @@ public class GamePhaseStrategyMid : IGamePhaseStrategy
             }
             if (card.Deck == PatronId.DUKE_OF_CROWS) val += 5;
         }
+        foreach (UniqueCard card in gameState.CurrentPlayer.KnownUpcomingDraws)
+        {
+            val += (int)GamePhaseTierList.GetCardTier(card.Name, 1);
+        }
+        foreach (UniqueCard card in gameState.EnemyPlayer.KnownUpcomingDraws)
+        {
+            val -= (int)GamePhaseTierList.GetCardTier(card.Name, 1);
+        }
         foreach (UniqueCard card in enemyCards)
         {
-            val -= (int)GamePhaseTierList.GetCardTier(card.Name, 0);
+            val -= (int)GamePhaseTierList.GetCardTier(card.Name, 1);
             if (card.Deck != PatronId.TREASURY)
             {
                 if (enemyCombos.ContainsKey(card.Deck))
@@ -193,13 +201,13 @@ public class GamePhaseStrategyMid : IGamePhaseStrategy
         foreach (SerializedAgent agent in gameState.CurrentPlayer.Agents)
         {
             val += agent.CurrentHp * prestigePlus + agentBonus;
-            // val += AgentTierList.GetCardTier(agent.RepresentingCard.Name, 0) + agent.CurrentHp;
+            // val += AgentTierList.GetCardTier(agent.RepresentingCard.Name, 1) + agent.CurrentHp;
         }
 
         foreach (SerializedAgent agent in gameState.EnemyPlayer.Agents)
         {
             val -= 40;
-            // val -= AgentTierList.GetCardTier(agent.RepresentingCard.Name, 0) + agent.CurrentHp;
+            // val -= AgentTierList.GetCardTier(agent.RepresentingCard.Name, 1) + agent.CurrentHp;
         }
         return val;
     }

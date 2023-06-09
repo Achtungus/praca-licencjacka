@@ -13,6 +13,8 @@ public enum GamePhaseTierEnum
     */
     S = 50,
     A = 30,
+
+    WOC = 20,
     B = 10,
     C = 3,
     D = 1,
@@ -27,7 +29,7 @@ public class PhaseCardTier
     public PatronId Deck;
     public List<GamePhaseTierEnum> Tier;
 
-    public PhaseCardTier(string name, PatronId deck, GamePhaseTierEnum tierEarly, GamePhaseTierEnum tierMid = GamePhaseTierEnum.B, GamePhaseTierEnum tierLate = GamePhaseTierEnum.B)
+    public PhaseCardTier(string name, PatronId deck, GamePhaseTierEnum tierEarly, GamePhaseTierEnum tierMid, GamePhaseTierEnum tierLate)
     {
         Name = name;
         Deck = deck;
@@ -130,7 +132,7 @@ public class GamePhaseTierList
         new PhaseCardTier("Imprisonment", PatronId.TREASURY, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION),
         new PhaseCardTier("Ragpicker", PatronId.TREASURY, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION),
         new PhaseCardTier("Tithe", PatronId.TREASURY, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION),
-        new PhaseCardTier("Writ of Coin", PatronId.TREASURY, GamePhaseTierEnum.S, GamePhaseTierEnum.C, GamePhaseTierEnum.UNKNOWN),
+        new PhaseCardTier("Writ of Coin", PatronId.TREASURY, GamePhaseTierEnum.WOC, GamePhaseTierEnum.B, GamePhaseTierEnum.UNKNOWN),
         new PhaseCardTier("Unknown", PatronId.TREASURY, GamePhaseTierEnum.UNKNOWN, GamePhaseTierEnum.UNKNOWN, GamePhaseTierEnum.UNKNOWN)
     };
 

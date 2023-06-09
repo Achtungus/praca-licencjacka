@@ -13,7 +13,7 @@ public class GamePhaseStrategyEarly : IGamePhaseStrategy
     int cardLimit = 16;
     static private int prestigePlus = 1;
     static private int prestigeMinus = -1;
-    static private int comboPower = 2;
+    static private int comboPower = 3;
     static private List<int> patronDuke = new List<int> { -30, 0, 30 }; //favoured/neutral/unvafoured
     static private List<int> patronAnsei = new List<int> { 10, 0, -10 };
     int heuristicMin = -500;
@@ -189,6 +189,15 @@ public class GamePhaseStrategyEarly : IGamePhaseStrategy
 
         int combos = (int)(calcCombos(ourCombos) - calcCombos(enemyCombos));
         val += combos;
+
+        foreach (UniqueCard card in gameState.CurrentPlayer.KnownUpcomingDraws)
+        {
+            val += (int)GamePhaseTierList.GetCardTier(card.Name, 0);
+        }
+        foreach (UniqueCard card in gameState.EnemyPlayer.KnownUpcomingDraws)
+        {
+            val -= (int)GamePhaseTierList.GetCardTier(card.Name, 0);
+        }
         foreach (SerializedAgent agent in gameState.CurrentPlayer.Agents)
         {
             val += agent.CurrentHp * prestigePlus + agentBonus;

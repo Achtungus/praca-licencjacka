@@ -205,7 +205,7 @@ public class GamePhaseStrategyLate : IGamePhaseStrategy
                 }
             }
         }
-        // }
+        // }s
         // if (enemyCardsDraw.Count() < 8)
         // {
         foreach (UniqueCard card in enemyCardsRest)
@@ -226,6 +226,15 @@ public class GamePhaseStrategyLate : IGamePhaseStrategy
         // }
         int combos = (int)(calcCombos(ourCombos) - calcCombos(enemyCombos));
         val += combos;
+
+        foreach (UniqueCard card in gameState.CurrentPlayer.KnownUpcomingDraws)
+        {
+            val += (int)GamePhaseTierList.GetCardTier(card.Name, 2);
+        }
+        foreach (UniqueCard card in gameState.EnemyPlayer.KnownUpcomingDraws)
+        {
+            val -= (int)GamePhaseTierList.GetCardTier(card.Name, 2);
+        }
 
         foreach (SerializedAgent agent in gameState.CurrentPlayer.Agents)
         {

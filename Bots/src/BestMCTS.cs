@@ -19,6 +19,7 @@ class GlobalStats
 }
 
 
+
 public class MCTSNode
 {
     // List to array
@@ -136,11 +137,9 @@ public class MCTSNode
     }
 }
 
-
 public class BestMCTS : AI
 {
     public uint expectedMoves = 8;
-
     public int playedMoves = -1;
     private const ulong seed = 123;
     private readonly SeededRandom rng = new(seed);
@@ -149,7 +148,6 @@ public class BestMCTS : AI
     TimeSpan timeForMoveComputation = TimeSpan.FromSeconds(0.3);
     TimeSpan turnTimeout = TimeSpan.FromSeconds(29.9);
     bool startOfTurn = true;
-
 
     public BestMCTS()
     {
