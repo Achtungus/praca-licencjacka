@@ -135,7 +135,6 @@ public class AgentTierList
 
     public static AgentTierEnum GetCardTier(string cardName)
     {
-        return AgentTierEnum.E;
         return Array.Find(AgentTierArray, x => x.Name == cardName).Tier;
     }
 }

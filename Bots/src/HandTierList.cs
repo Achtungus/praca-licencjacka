@@ -135,7 +135,6 @@ public class HandTierList
 
     public static HandTierEnum GetCardTier(string cardName)
     {
-        return HandTierEnum.E;
         return Array.Find(HandTierArray, x => x.Name == cardName).Tier;
     }
 }
