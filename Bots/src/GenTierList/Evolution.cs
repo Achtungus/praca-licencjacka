@@ -1,96 +1,172 @@
-// using System.IO;
-// using System.Threading;
+using ScriptsOfTribute;
 
-// namespace Evolution;
+using System.Collections.Concurrent;
+using System.IO;
+using System.Diagnostics;
 
-// public class Generation
-// {
-//     const int numberOfChildren = 6;
-//     const int numberOfFightsOneSite = 100;
-//     int currentGenerationNumber = 0;
+namespace Evolution;
 
-//     List<TierListEv> currentGeneration = new();
-//     public void CreateFirstGeneration(TierListEv tierList)
-//     {
-//         currentGeneration.Add(tierList);
-//         for (int i = 0; i < numberOfChildren - 1; i++)
-//         {
-//             currentGeneration.Add(tierList.Mutate(20, 1.0));
-//         }
-//     }
+public class Generation
+{
+    const int numberOfChildren = 8;
+    const int numberOfFights = 100;
+    int currentGenerationNumber = 0;
 
-//     void SaveGeneration()
-//     {
-//         //
-//     }
+    List<TierListEv> currentGeneration = new();
+    List<int> scores = new();
+    public void CreateFirstGeneration(TierListEv tierList)
+    {
+        currentGeneration.Add(tierList);
+        for (int i = 0; i + 1 < numberOfChildren; i++)
+        {
+            currentGeneration.Add(tierList.Mutate(30, 1.0));
+        }
+        for (int i = 0; i < numberOfChildren; i++)
+        {
+            scores.Add(0);
+        }
+    }
 
-//     List<TierListEv> SelectChildren(List<TierListEv> children)
-//     {
-//         List<(int, int)> wins = new(children.Count);
-//         for (int i = 0; i < wins.Count; i++)
-//         {
-//             wins[i] = (0, i);
-//         }
+    public void SaveGeneration()
+    {
+        string dirPath = $"../../../Generations/Generation_{currentGenerationNumber}";
+        Directory.CreateDirectory(dirPath);
+        for (int i = 0; i < currentGeneration.Count; i++)
+        {
+            using (StreamWriter sw = File.CreateText(dirPath + $"/TierList_{i}_{scores[i]}.txt"))
+            {
+                sw.Write(currentGeneration[i].ToString());
+            }
+        }
+    }
 
-//         int totalForOneChild = numberOfFightsOneSite * 2 * currentGeneration.Count;
+    List<TierListEv> SelectChildren(List<TierListEv> children)
+    {
+        List<(int, int)> wins = new();
+        for (int i = 0; i < children.Count; i++)
+        {
+            wins.Add((0, i));
+        }
+        int totalForOneChild = numberOfFights * 2 * currentGeneration.Count;
 
-//         for (int i = 0; i < children.Count; i++)
-//         {
-//             for (int j = 0; j < currentGeneration.Count; j++)
-//             {
-//                 for (int k = 0; k < numberOfFightsOneSite; k++)
-//                 {
-//                     var game = new ScriptsOfTribute.AI.ScriptsOfTribute(population[thread_index * 2 + j], population[thread_index * 2 + 1 + j]);
-//                     var (endState, endBoardState) = game.Play();
+        List<BestMCTS> currentGenerationMCTS = new();
+        foreach (TierListEv tierList in currentGeneration)
+        {
+            currentGenerationMCTS.Add(new BestMCTS(tierList));
+        }
+        List<BestMCTS> childrenMCTS = new();
+        foreach (TierListEv tierList in children)
+        {
+            childrenMCTS.Add(new BestMCTS(tierList));
+        }
 
-//                     if (endState.Winner == PlayerEnum.PLAYER1)
-//                     {
-//                         winners[j / 2 + thread_index] = population[thread_index * 2 + j];
-//                     }
-//                     else
-//                     {
-//                         winners[j / 2 + thread_index] = population[thread_index * 2 + 1 + j];
-//                     }
-//                 }
-//             }
-//         }
+        List<(int, int, int)> fights = new();
 
-//         SaveGeneration();
+        for (int i = 0; i < children.Count; i++)
+        {
+            for (int j = 0; j < currentGeneration.Count; j++)
+            {
+                fights.Add((i, j, 1));
+                fights.Add((i, j, 2));
+            }
+        }
 
-//         return best;
-//     }
+        Console.WriteLine($"{currentGeneration.Count * children.Count * 200} stanow");
 
-//     public void NextGeneration()
-//     {
-//         List<TierListEv> children = new();
-//         children.AddRange(currentGeneration);
-//         for (int i = 0; i < children.Count; i++)
-//         {
-//             for (int j = i + 1; j < children.Count; j++)
-//             {
-//                 TierListEv child = TierListEv.Combine(new List<TierListEv> { children[i], children[j] });
-//                 children.Add(child.Mutate(3, 0.05));
-//             }
-//         }
+        ConcurrentBag<int> cb = new ConcurrentBag<int>();
+        Parallel.ForEach(fights, (args) =>
+        {
+            Console.WriteLine(cb.Count);
+            var (i, j, player) = args;
+            if (player == 1)
+            {
+                for (int k = 0; k < numberOfFights; k++)
+                {
+                    var cMCTS = new BestMCTS(children[i]);
+                    var cgMCTS = new BestMCTS(currentGeneration[j]);
+                    var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cMCTS, cgMCTS);
+                    var (endState, endBoardState) = game.Play();
+                    if (endState.Winner == PlayerEnum.PLAYER1)
+                    {
+                        cb.Add(i);
+                    }
+                }
+            }
+            else
+            {
+                for (int k = 0; k < numberOfFights; k++)
+                {
+                    var cMCTS = new BestMCTS(children[i]);
+                    var cgMCTS = new BestMCTS(currentGeneration[j]);
+                    var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cgMCTS, cMCTS);
+                    var (endState, endBoardState) = game.Play();
+                    if (endState.Winner == PlayerEnum.PLAYER2)
+                    {
+                        cb.Add(i);
+                    }
+                }
 
-//         children = SelectChildren(children);
+            }
+        });
 
-//         currentGenerationNumber++;
-//         currentGeneration = children;
-//     }
+        foreach (int idx in cb)
+        {
+            wins[idx] = (wins[idx].Item1 + 1, idx);
+        }
 
-// }
+        wins.Sort();
+        wins.Reverse();
 
-// class Program
-// {
-//     static void Main(string[] args)
-//     {
-//         Generation g = new();
-//         g.CreateFirstGeneration(new TierListEv());
-//         while (true)
-//         {
-//             g.NextGeneration();
-//         }
-//     }
+        scores.Clear();
+        List<TierListEv> best = new();
+        for (int i = 0; i + 2 < numberOfChildren; i++)
+        {
+            best.Add(children[wins[i].Item2]);
+            scores.Add(wins[i].Item1);
+        }
 
-// }
+        wins.Reverse();
+        for (int i = 0; i < 2; i++)
+        {
+            best.Add(children[wins[i].Item2].Mutate(20, 0.05));
+            scores.Add(wins[i].Item1);
+        }
+
+        return best;
+    }
+
+    public void NextGeneration()
+    {
+        List<TierListEv> children = new();
+        children.AddRange(currentGeneration);
+        for (int i = 0; i < currentGeneration.Count; i++)
+        {
+            for (int j = i + 1; j < currentGeneration.Count; j++)
+            {
+                TierListEv child = TierListEv.Combine(new List<TierListEv> { currentGeneration[i], currentGeneration[j] });
+                children.Add(child.Mutate(3, 0.05));
+            }
+        }
+
+        children = SelectChildren(children);
+
+        currentGenerationNumber++;
+        currentGeneration = children;
+    }
+
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        Generation g = new();
+        g.CreateFirstGeneration(new TierListEv());
+        while (true)
+        {
+            g.SaveGeneration();
+            g.NextGeneration();
+        }
+    }
+
+}
