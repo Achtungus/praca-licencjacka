@@ -10,6 +10,8 @@ namespace Bots;
 
 public class GamePhaseStrategyEarly : IGamePhaseStrategy
 {
+
+    static private List<string> taunts = new List<string> { "Stubborn Shadow", "Banneret", "Knight Commander", "Shield Bearer", "Bangkorai Sentries", "Knights of Saint Pelin" };
     int cardLimit = 16;
     static private int prestigePlus = 1;
     static private int prestigeMinus = -1;
@@ -20,12 +22,21 @@ public class GamePhaseStrategyEarly : IGamePhaseStrategy
     int heuristicMax = 500;
     static private int overCardLimitPenalty = 0;
     private int agentBonus = 10;
+    private int upcomingBonus = 5;
+    private int enemyAgentPenalty = 5;
+    private int knowingCardCombo = 2;
     public GamePhaseStrategyEarly() { }
 
     public int BasicProperties(SeededGameState gameState)
     {
         int val = 0;
-        int afterRoundPoint = gameState.CurrentPlayer.Prestige + gameState.CurrentPlayer.Power;
+        int power = gameState.CurrentPlayer.Power;
+        foreach (SerializedAgent agent in gameState.EnemyPlayer.Agents)
+        {
+            if (taunts.Contains(agent.RepresentingCard.Name)) power -= agent.CurrentHp;
+        }
+        power = Math.Max(power, 0);
+        int afterRoundPoint = gameState.CurrentPlayer.Prestige + power;
         val += afterRoundPoint * prestigePlus;
         val += gameState.EnemyPlayer.Prestige * prestigeMinus;
         return val;
@@ -192,11 +203,13 @@ public class GamePhaseStrategyEarly : IGamePhaseStrategy
 
         foreach (UniqueCard card in gameState.CurrentPlayer.KnownUpcomingDraws)
         {
-            val += (int)GamePhaseTierList.GetCardTier(card.Name, 0);
+            val += (int)HandTierList.GetCardTier(card.Name) * upcomingBonus;
+            if (ourCombos.ContainsKey(card.Deck)) val += ourCombos[card.Deck] * knowingCardCombo;
         }
         foreach (UniqueCard card in gameState.EnemyPlayer.KnownUpcomingDraws)
         {
-            val -= (int)GamePhaseTierList.GetCardTier(card.Name, 0);
+            val -= (int)HandTierList.GetCardTier(card.Name) * upcomingBonus;
+            if (enemyCombos.ContainsKey(card.Deck)) val -= ourCombos[card.Deck] * knowingCardCombo;
         }
         foreach (SerializedAgent agent in gameState.CurrentPlayer.Agents)
         {
@@ -206,8 +219,12 @@ public class GamePhaseStrategyEarly : IGamePhaseStrategy
 
         foreach (SerializedAgent agent in gameState.EnemyPlayer.Agents)
         {
-            val -= 30;
-            // val -= AgentTierList.GetCardTier(agent.RepresentingCard.Name, 0) + agent.CurrentHp;
+            // val -= 30;
+            val -= (int)AgentTierList.GetCardTier(agent.RepresentingCard.Name) * enemyAgentPenalty + agent.CurrentHp;
+        }
+        foreach (UniqueCard card in gameState.TavernAvailableCards)
+        {
+            val -= (int)GamePhaseTierList.GetCardTier(card.Name, 0) / 3;
         }
         return val;
     }

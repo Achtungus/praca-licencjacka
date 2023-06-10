@@ -10,6 +10,7 @@ namespace Bots;
 
 public class GamePhaseStrategyLate : IGamePhaseStrategy
 {
+    static private List<string> taunts = new List<string> { "Stubborn Shadow", "Banneret", "Knight Commander", "Shield Bearer", "Bangkorai Sentries", "Knights of Saint Pelin" };
     int cardLimit = 16;
     static private int prestigePlus = 10;
     static private int prestigeMinus = -10;
@@ -19,13 +20,23 @@ public class GamePhaseStrategyLate : IGamePhaseStrategy
     static private int overCardLimitPenalty = 60;
     int heuristicMin = -500;
     int heuristicMax = 500;
-    private int agentBonus = 10;
+    private int enemyAgentPenalty = 5;
+    private int upcomingBonus = 5;
+    private int agentBonus = 7;
+    private int knowingCardCombo = 2;
+
     public GamePhaseStrategyLate() { }
 
     public int BasicProperties(SeededGameState gameState)
     {
         int val = 0;
-        int afterRoundPoint = gameState.CurrentPlayer.Prestige + gameState.CurrentPlayer.Power;
+        int power = gameState.CurrentPlayer.Power;
+        foreach (SerializedAgent agent in gameState.EnemyPlayer.Agents)
+        {
+            if (taunts.Contains(agent.RepresentingCard.Name)) power -= agent.CurrentHp;
+        }
+        power = Math.Max(power, 0);
+        int afterRoundPoint = gameState.CurrentPlayer.Prestige + power;
         val += afterRoundPoint * prestigePlus;
         val += gameState.EnemyPlayer.Prestige * prestigeMinus;
         return val;
@@ -226,27 +237,32 @@ public class GamePhaseStrategyLate : IGamePhaseStrategy
         // }
         int combos = (int)(calcCombos(ourCombos) - calcCombos(enemyCombos));
         val += combos;
-
         foreach (UniqueCard card in gameState.CurrentPlayer.KnownUpcomingDraws)
         {
-            val += (int)GamePhaseTierList.GetCardTier(card.Name, 2);
+            val += (int)HandTierList.GetCardTier(card.Name) * upcomingBonus;
+            if (ourCombos.ContainsKey(card.Deck)) val += ourCombos[card.Deck] * knowingCardCombo;
         }
         foreach (UniqueCard card in gameState.EnemyPlayer.KnownUpcomingDraws)
         {
-            val -= (int)GamePhaseTierList.GetCardTier(card.Name, 2);
+            val -= (int)HandTierList.GetCardTier(card.Name) * upcomingBonus;
+            if (enemyCombos.ContainsKey(card.Deck)) val -= ourCombos[card.Deck] * knowingCardCombo;
         }
 
         foreach (SerializedAgent agent in gameState.CurrentPlayer.Agents)
         {
             val += agent.CurrentHp * prestigePlus + agentBonus;
-            // val += AgentTierList.GetCardTier(agent.RepresentingCard.Name, 2) + agent.CurrentHp;
+            // val += AgentTierList.GetCardTier(agent.RepresentingCard.Name, 0) + agent.CurrentHp;
         }
 
         foreach (SerializedAgent agent in gameState.EnemyPlayer.Agents)
         {
-            val -= 40;
-            // val -= AgentTierList.GetCardTier(agent.RepresentingCard.Name, 2) + agent.CurrentHp;
+            // val -= 30;
+            val -= (int)AgentTierList.GetCardTier(agent.RepresentingCard.Name) * enemyAgentPenalty + agent.CurrentHp;
         }
+        // foreach (UniqueCard card in gameState.TavernAvailableCards)
+        // {
+        //     val -= (int)GamePhaseTierList.GetCardTier(card.Name, 2) / 3;
+        // }
         return val;
     }
     private double calcCombos(Dictionary<PatronId, int> dict)

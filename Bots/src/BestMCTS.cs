@@ -16,6 +16,7 @@ class GlobalStats
     public static ulong roundNumber = 1;
     public static IGamePhaseStrategy strategy = new GamePhaseStrategyEarly();
     public static int cardsCount = 0;
+    public static List<string> taunts = new List<string> { "Stubborn Shadow", "Banneret", "Knight Commander", "Shield Bearer", "Bangkorai Sentries", "Knights of Saint Pelin" };
 }
 
 
@@ -93,10 +94,16 @@ public class MCTSNode
         if (patronsBonuses == 3 * heuristicMin) return 0;
         int basicProperties = GlobalStats.strategy.BasicProperties(gameState);
         int cardsValues = GlobalStats.strategy.CardsValues(gameState, GlobalStats.cardsCount);
-        cardsValues = Math.Clamp(cardsValues, -200, 200);
+        // cardsValues = Math.Clamp(cardsValues, -200, 200);
         int val = basicProperties + patronsBonuses + cardsValues;
         // if (val > 500 || val < -500) Console.WriteLine(val.ToString());
-        int afterRoundPoint = gameState.CurrentPlayer.Prestige + gameState.CurrentPlayer.Power;
+        int power = gameState.CurrentPlayer.Power;
+        foreach (SerializedAgent agent in gameState.EnemyPlayer.Agents)
+        {
+            if (GlobalStats.taunts.Contains(agent.RepresentingCard.Name)) power -= agent.CurrentHp;
+        }
+        power = Math.Max(power, 0);
+        int afterRoundPoint = gameState.CurrentPlayer.Prestige + power;
         if (gameState.EnemyPlayer.Prestige >= 40 && afterRoundPoint <= gameState.EnemyPlayer.Prestige) return 0;
         if (afterRoundPoint >= 80) return 1;
         if (afterRoundPoint >= 40)
@@ -250,8 +257,6 @@ public class BestMCTS : AI
         if (availablePatrons.Contains(PatronId.DUKE_OF_CROWS)) return PatronId.DUKE_OF_CROWS;
         return availablePatrons.PickRandom(rng);
     }
-
-
     public static List<string> instantPlay = new List<string>{
         // HLAALU
         // "Currency Exchange",
@@ -363,8 +368,8 @@ public class BestMCTS : AI
             List<UniqueCard> ourCards = gameState.CurrentPlayer.Hand.Concat(gameState.CurrentPlayer.Played.Concat(gameState.CurrentPlayer.CooldownPile.Concat(gameState.CurrentPlayer.DrawPile))).ToList();
             GlobalStats.cardsCount = ourCards.Count();
             int points = gameState.CurrentPlayer.Prestige;
-            if (points >= 25 || gameState.EnemyPlayer.Prestige >= 30 || GlobalStats.roundNumber >= 13) new GamePhaseStrategyLate();
-            else if (points <= 10 && gameState.EnemyPlayer.Prestige <= 13 && GlobalStats.roundNumber <= 5) new GamePhaseStrategyEarly();
+            if (points >= 25 || gameState.EnemyPlayer.Prestige >= 30) new GamePhaseStrategyLate();
+            else if (points <= 10 && gameState.EnemyPlayer.Prestige <= 13) new GamePhaseStrategyEarly();
             else GlobalStats.strategy = new GamePhaseStrategyMid();
             // Console.WriteLine(GlobalStats.gamePhase);
         }
