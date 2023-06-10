@@ -11,7 +11,7 @@ namespace Bots;
 public class GamePhaseStrategyMid : IGamePhaseStrategy
 {
     static private List<string> taunts = new List<string> { "Stubborn Shadow", "Banneret", "Knight Commander", "Shield Bearer", "Bangkorai Sentries", "Knights of Saint Pelin" };
-    int cardLimit = 16;
+    int cardLimit = 17;
     static private int prestigePlus = 5;
     static private int prestigeMinus = -5;
     static private int comboPower = 2;
@@ -21,7 +21,7 @@ public class GamePhaseStrategyMid : IGamePhaseStrategy
     int heuristicMin = -500;
     int heuristicMax = 500;
     private int agentBonus = 10;
-    private int enemyAgentPenalty = 8;
+    private int enemyAgentPenalty = 7;
     private int upcomingBonus = 5;
     private int knowingCardCombo = 2;
 
@@ -222,10 +222,10 @@ public class GamePhaseStrategyMid : IGamePhaseStrategy
         }
 
         // penalty for good card in tavern
-        foreach (UniqueCard card in gameState.TavernAvailableCards)
-        {
-            val -= (int)GamePhaseTierList.GetCardTier(card.Name, 1) / 3;
-        }
+        // foreach (UniqueCard card in gameState.TavernAvailableCards)
+        // {
+        //     val -= (int)GamePhaseTierList.GetCardTier(card.Name, 1) / 3;
+        // }
         return val;
     }
 

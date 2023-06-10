@@ -12,19 +12,19 @@ public class GamePhaseStrategyEarly : IGamePhaseStrategy
 {
 
     static private List<string> taunts = new List<string> { "Stubborn Shadow", "Banneret", "Knight Commander", "Shield Bearer", "Bangkorai Sentries", "Knights of Saint Pelin" };
-    int cardLimit = 16;
+    int cardLimit = 20; // na razie to prawie inf
     static private int prestigePlus = 1;
     static private int prestigeMinus = -1;
-    static private int comboPower = 3;
+    static private int comboPower = 2;
     static private List<int> patronDuke = new List<int> { -30, 0, 30 }; //favoured/neutral/unvafoured
     static private List<int> patronAnsei = new List<int> { 10, 0, -10 };
     int heuristicMin = -500;
     int heuristicMax = 500;
     static private int overCardLimitPenalty = 0;
-    private int agentBonus = 10;
-    private int upcomingBonus = 5;
+    private int agentBonus = 5;
+    private int upcomingBonus = 4;
     private int enemyAgentPenalty = 5;
-    private int knowingCardCombo = 2;
+    private int knowingCardCombo = 1;
     public GamePhaseStrategyEarly() { }
 
     public int BasicProperties(SeededGameState gameState)
@@ -222,10 +222,10 @@ public class GamePhaseStrategyEarly : IGamePhaseStrategy
             // val -= 30;
             val -= (int)AgentTierList.GetCardTier(agent.RepresentingCard.Name) * enemyAgentPenalty + agent.CurrentHp;
         }
-        foreach (UniqueCard card in gameState.TavernAvailableCards)
-        {
-            val -= (int)GamePhaseTierList.GetCardTier(card.Name, 0) / 3;
-        }
+        // foreach (UniqueCard card in gameState.TavernAvailableCards)
+        // {
+        //     val -= (int)GamePhaseTierList.GetCardTier(card.Name, 0) / 3;
+        // }
         return val;
     }
 
