@@ -11,13 +11,13 @@ namespace Bots;
 public class GamePhaseStrategyLate : IGamePhaseStrategy
 {
     static private List<string> taunts = new List<string> { "Stubborn Shadow", "Banneret", "Knight Commander", "Shield Bearer", "Bangkorai Sentries", "Knights of Saint Pelin" };
-    int cardLimit = 16;
+    int cardLimit = 17;
     static private int prestigePlus = 10;
     static private int prestigeMinus = -10;
     static private int comboPower = 2;
     static private List<int> patronDuke = new List<int> { -40, 0, 40 }; //favoured/neutral/unvafoured
     static private List<int> patronAnsei = new List<int> { 10, 0, -10 };
-    static private int overCardLimitPenalty = 60;
+    static private int overCardLimitPenalty = 40;
     int heuristicMin = -500;
     int heuristicMax = 500;
     private int enemyAgentPenalty = 5;
