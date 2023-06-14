@@ -1,0 +1,62 @@
+Currency Exchange HLAALU 24 76 19
+Luxury Exports HLAALU 71 61 17
+Oathman HLAALU 42 44 28
+Hlaalu Councilor HLAALU 16 7 -14
+Hlaalu Kinsman HLAALU 52 23 -26
+House Embassy HLAALU 53 39 -4
+House Marketplace HLAALU 10 41 -14
+Hireling HLAALU -22 32 -14
+Hostile Takeover HLAALU 35 -12 -22
+Customs Seizure HLAALU 0 -10 -26
+Goods Shipment HLAALU -17 26 -12
+Midnight Raid RED_EAGLE 57 69 71
+Hagraven RED_EAGLE -4 -18 -20
+Hagraven Matron RED_EAGLE 1 26 -7
+War Song RED_EAGLE -18 4 -29
+Blackfeather Knave DUKE_OF_CROWS 67 31 26
+Plunder DUKE_OF_CROWS 70 58 74
+Toll of Flesh DUKE_OF_CROWS 65 57 57
+Toll of Silver DUKE_OF_CROWS 52 47 57
+Murder of Crows DUKE_OF_CROWS 20 29 19
+Pilfer DUKE_OF_CROWS 59 20 15
+Squawking Oratory DUKE_OF_CROWS 8 37 34
+Pool of Shadow DUKE_OF_CROWS -17 0 39
+Scratch DUKE_OF_CROWS 10 46 -4
+Blackfeather Brigand DUKE_OF_CROWS 9 1 -21
+Blackfeather Knight DUKE_OF_CROWS -2 -18 29
+Peck DUKE_OF_CROWS 21 -10 27
+Conquest ANSEI 51 23 0
+Hira's End ANSEI 66 79 28
+Hel Shira Herald ANSEI 33 29 -15
+March on Hattu ANSEI 26 24 41
+Shehai Summoning ANSEI -6 31 28
+Warrior Wave ANSEI 77 53 30
+Ansei Assault ANSEI 35 17 -13
+Ansei's Victory ANSEI 26 4 -5
+No Shira Poet ANSEI 21 -10 -16
+Way of the Sword ANSEI 13 -11 1
+Rally PELIN 38 70 10
+Siege Weapon Volley PELIN 3 55 12
+The Armory PELIN 41 41 44
+Banneret PELIN 5 33 5
+Knight Commander PELIN 60 55 55
+Reinforcements PELIN 21 37 -20
+Archers' Volley PELIN 21 21 9
+Legion's Arrival PELIN 14 42 -6
+Bangkorai Sentries PELIN -22 5 -25
+Knights of Saint Pelin PELIN 23 43 -10
+The Portcullis PELIN 9 30 17
+Fortify PELIN -20 5 -5
+Bewilderment RAJHIN -5 22 -1
+Grand Larceny RAJHIN 6 35 -15
+Jarring Lullaby RAJHIN 9 1 15
+Jeering Shadow RAJHIN 19 -19 1
+Pounce and Profit RAJHIN 40 25 20
+Prowling Shadow RAJHIN 12 13 10
+Shadow's Slumber RAJHIN 57 57 -20
+Slight of Hand RAJHIN 14 5 -18
+Stubborn Shadow RAJHIN -14 16 -9
+Twilight Revelry RAJHIN 35 56 21
+Swipe RAJHIN -28 -5 -25
+Gold TREASURY -25 -22 -24
+Writ of Coin TREASURY 61 -16 10

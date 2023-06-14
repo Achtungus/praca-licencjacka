@@ -1,0 +1,62 @@
+Currency Exchange HLAALU 50 50 30
+Luxury Exports HLAALU 50 50 3
+Oathman HLAALU 30 30 10
+Hlaalu Councilor HLAALU 30 30 3
+Hlaalu Kinsman HLAALU 30 30 3
+House Embassy HLAALU 30 30 3
+House Marketplace HLAALU 10 30 3
+Hireling HLAALU 3 3 1
+Hostile Takeover HLAALU 10 3 1
+Customs Seizure HLAALU 1 1 1
+Goods Shipment HLAALU 1 1 1
+Midnight Raid RED_EAGLE 50 50 50
+Hagraven RED_EAGLE 1 10 1
+Hagraven Matron RED_EAGLE 1 30 3
+War Song RED_EAGLE 1 1 1
+Blackfeather Knave DUKE_OF_CROWS 50 50 30
+Plunder DUKE_OF_CROWS 50 50 50
+Toll of Flesh DUKE_OF_CROWS 50 50 30
+Toll of Silver DUKE_OF_CROWS 50 50 30
+Murder of Crows DUKE_OF_CROWS 50 50 30
+Pilfer DUKE_OF_CROWS 30 50 30
+Squawking Oratory DUKE_OF_CROWS 30 50 30
+Pool of Shadow DUKE_OF_CROWS 10 30 10
+Scratch DUKE_OF_CROWS 30 30 10
+Blackfeather Brigand DUKE_OF_CROWS 3 3 3
+Blackfeather Knight DUKE_OF_CROWS 3 10 3
+Peck DUKE_OF_CROWS 3 3 3
+Conquest ANSEI 30 30 10
+Hira's End ANSEI 50 50 50
+Hel Shira Herald ANSEI 10 30 10
+March on Hattu ANSEI 30 30 30
+Shehai Summoning ANSEI 10 10 10
+Warrior Wave ANSEI 50 30 10
+Ansei Assault ANSEI 10 30 10
+Ansei's Victory ANSEI 10 30 10
+No Shira Poet ANSEI 3 3 3
+Way of the Sword ANSEI 1 1 1
+Rally PELIN 30 50 30
+Siege Weapon Volley PELIN 30 50 10
+The Armory PELIN 30 50 30
+Banneret PELIN 30 50 30
+Knight Commander PELIN 50 50 30
+Reinforcements PELIN 50 30 10
+Archers' Volley PELIN 10 30 10
+Legion's Arrival PELIN 30 30 10
+Bangkorai Sentries PELIN 3 10 3
+Knights of Saint Pelin PELIN 3 30 3
+The Portcullis PELIN 3 3 1
+Fortify PELIN 1 1 1
+Bewilderment RAJHIN -3 -3 -3
+Grand Larceny RAJHIN 30 30 10
+Jarring Lullaby RAJHIN 10 30 10
+Jeering Shadow RAJHIN 3 3 3
+Pounce and Profit RAJHIN 50 50 10
+Prowling Shadow RAJHIN 10 3 3
+Shadow's Slumber RAJHIN 30 30 10
+Slight of Hand RAJHIN 30 10 1
+Stubborn Shadow RAJHIN 1 3 1
+Twilight Revelry RAJHIN 10 30 10
+Swipe RAJHIN 1 1 1
+Gold TREASURY 0 -3 -3
+Writ of Coin TREASURY 50 10 0
