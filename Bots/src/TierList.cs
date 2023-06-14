@@ -1,143 +1,114 @@
-using ScriptsOfTribute;
-
 namespace Bots;
 
-public enum GamePhaseTierEnum
+public static class GPCardTierList
 {
-    /*
-    S = 1000,
-    A = 400,
-    B = 200,
-    C = 90,
-    D = 40,
-    */
-    S = 50,
-    A = 30,
+    const int S = 50;
+    const int A = 30;
+    const int WOC = 20;
+    const int B = 10;
+    const int C = 3;
+    const int D = 1;
+    const int UNKNOWN = 0;
+    const int CONTRACT_ACTION = 0;
+    const int CURSE = -3;
 
-    WOC = 20,
-    B = 10,
-    C = 3,
-    D = 1,
-    UNKNOWN = 0,
-    CONTRACT_ACTION = 0,
-    CURSE = -3,
-}
+    static readonly Dictionary<string, int[]> cardTierDict = new Dictionary<string, int[]> {
+        { "Currency Exchange", new int[] { S, S, A } },
+        { "Luxury Exports",    new int[] { S, S, C } },
+        { "Oathman",           new int[] { A, A, B } },
+        { "Ebony Mine",        new int[] { C, B, C } },
+        { "Hlaalu Councilor",  new int[] { A, A, C } },
+        { "Hlaalu Kinsman",    new int[] { A, A, C } },
+        { "House Embassy",     new int[] { A, A, C } },
+        { "House Marketplace", new int[] { B, A, C } },
+        { "Hireling",          new int[] { C, C, D } },
+        { "Hostile Takeover",  new int[] { B, C, D } },
+        { "Kwama Egg Mine",    new int[] { C, B, C } },
+        { "Customs Seizure",   new int[] { D, D, D } },
+        { "Goods Shipment",    new int[] { D, D, D } },
 
-public class PhaseCardTier
-{
-    public string Name;
-    public PatronId Deck;
-    public List<GamePhaseTierEnum> Tier;
+        { "Midnight Raid",     new int[] { S, S, S } },
+        { "Blood Sacrifice",   new int[] { S, S, S } },
+        { "Bloody Offering",   new int[] { S, S, S } },
+        { "Bonfire",           new int[] { C, B, C } },
+        { "Briarheart Ritual", new int[] { C, B, C } },
+        { "Clan-Witch",        new int[] { C, B, D } },
+        { "Elder Witch",       new int[] { C, B, D } },
+        { "Hagraven",          new int[] { D, B, D } },
+        { "Hagraven Matron",   new int[] { D, A, C } },
+        { "Imperial Plunder",  new int[] { B, A, B } },
+        { "Imperial Spoils",   new int[] { B, A, B } },
+        { "Karth Man-Hunter",  new int[] { C, B, C } },
+        { "War Song",          new int[] { D, D, D } },
 
-    public PhaseCardTier(string name, PatronId deck, GamePhaseTierEnum tierEarly, GamePhaseTierEnum tierMid, GamePhaseTierEnum tierLate)
-    {
-        Name = name;
-        Deck = deck;
-        Tier = new List<GamePhaseTierEnum> { tierEarly, tierMid, tierLate };
-    }
-}
-public class GamePhaseTierList
-{
-    private static PhaseCardTier[] CardTierArray = {
-        new PhaseCardTier("Currency Exchange", PatronId.HLAALU, GamePhaseTierEnum.S, GamePhaseTierEnum.S, GamePhaseTierEnum.A),
-        new PhaseCardTier("Luxury Exports", PatronId.HLAALU, GamePhaseTierEnum.S, GamePhaseTierEnum.S, GamePhaseTierEnum.C),
-        new PhaseCardTier("Oathman", PatronId.HLAALU, GamePhaseTierEnum.A, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Ebony Mine", PatronId.HLAALU, GamePhaseTierEnum.C, GamePhaseTierEnum.B, GamePhaseTierEnum.C),
-        new PhaseCardTier("Hlaalu Councilor", PatronId.HLAALU, GamePhaseTierEnum.A, GamePhaseTierEnum.A, GamePhaseTierEnum.C),
-        new PhaseCardTier("Hlaalu Kinsman", PatronId.HLAALU, GamePhaseTierEnum.A, GamePhaseTierEnum.A, GamePhaseTierEnum.C),
-        new PhaseCardTier("House Embassy", PatronId.HLAALU, GamePhaseTierEnum.A, GamePhaseTierEnum.A, GamePhaseTierEnum.C),
-        new PhaseCardTier("House Marketplace", PatronId.HLAALU, GamePhaseTierEnum.B, GamePhaseTierEnum.A, GamePhaseTierEnum.C),
-        new PhaseCardTier("Hireling", PatronId.HLAALU, GamePhaseTierEnum.C, GamePhaseTierEnum.C, GamePhaseTierEnum.D),
-        new PhaseCardTier("Hostile Takeover", PatronId.HLAALU, GamePhaseTierEnum.B, GamePhaseTierEnum.C, GamePhaseTierEnum.D),
-        new PhaseCardTier("Kwama Egg Mine", PatronId.HLAALU, GamePhaseTierEnum.C, GamePhaseTierEnum.B, GamePhaseTierEnum.C),
-        new PhaseCardTier("Customs Seizure", PatronId.HLAALU, GamePhaseTierEnum.D, GamePhaseTierEnum.D, GamePhaseTierEnum.D),
-        new PhaseCardTier("Goods Shipment", PatronId.HLAALU, GamePhaseTierEnum.D, GamePhaseTierEnum.D, GamePhaseTierEnum.D),
+        { "Blackfeather Knave",     new int[] { S, S, A } },
+        { "Plunder",                new int[] { S, S, S } },
+        { "Toll of Flesh",          new int[] { S, S, A } },
+        { "Toll of Silver",         new int[] { S, S, A } },
+        { "Murder of Crows",        new int[] { S, S, A } },
+        { "Pilfer",                 new int[] { A, S, A } },
+        { "Squawking Oratory",      new int[] { A, S, A } },
+        { "Law of Sovereign Roost", new int[] { B, A, B } },
+        { "Pool of Shadow",         new int[] { B, A, B } },
+        { "Scratch",                new int[] { A, A, B } },
+        { "Blackfeather Brigand",   new int[] { C, C, C } },
+        { "Blackfeather Knight",    new int[] { C, B, C } },
+        { "Peck",                   new int[] { C, C, C } },
 
-        new PhaseCardTier("Midnight Raid", PatronId.RED_EAGLE, GamePhaseTierEnum.S, GamePhaseTierEnum.S, GamePhaseTierEnum.S),
-        new PhaseCardTier("Blood Sacrifice", PatronId.RED_EAGLE, GamePhaseTierEnum.S, GamePhaseTierEnum.S, GamePhaseTierEnum.S),
-        new PhaseCardTier("Bloody Offering", PatronId.RED_EAGLE, GamePhaseTierEnum.S, GamePhaseTierEnum.S, GamePhaseTierEnum.S),
-        new PhaseCardTier("Bonfire", PatronId.RED_EAGLE, GamePhaseTierEnum.C, GamePhaseTierEnum.B, GamePhaseTierEnum.C),
-        new PhaseCardTier("Briarheart Ritual", PatronId.RED_EAGLE, GamePhaseTierEnum.C, GamePhaseTierEnum.B, GamePhaseTierEnum.C),
-        new PhaseCardTier("Clan-Witch", PatronId.RED_EAGLE, GamePhaseTierEnum.C, GamePhaseTierEnum.B, GamePhaseTierEnum.D),
-        new PhaseCardTier("Elder Witch", PatronId.RED_EAGLE, GamePhaseTierEnum.C, GamePhaseTierEnum.B, GamePhaseTierEnum.D),
-        new PhaseCardTier("Hagraven", PatronId.RED_EAGLE, GamePhaseTierEnum.D, GamePhaseTierEnum.B, GamePhaseTierEnum.D),
-        new PhaseCardTier("Hagraven Matron", PatronId.RED_EAGLE, GamePhaseTierEnum.D, GamePhaseTierEnum.A, GamePhaseTierEnum.C),
-        new PhaseCardTier("Imperial Plunder", PatronId.RED_EAGLE, GamePhaseTierEnum.B, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Imperial Spoils", PatronId.RED_EAGLE, GamePhaseTierEnum.B, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Karth Man-Hunter", PatronId.RED_EAGLE, GamePhaseTierEnum.C, GamePhaseTierEnum.B, GamePhaseTierEnum.C),
-        new PhaseCardTier("War Song", PatronId.RED_EAGLE, GamePhaseTierEnum.D, GamePhaseTierEnum.D, GamePhaseTierEnum.D),
+        { "Conquest",          new int[] { A, A, B } },
+        { "Grand Oratory",     new int[] { B, S, S } },
+        { "Hira's End",        new int[] { S, S, S } },
+        { "Hel Shira Herald",  new int[] { B, A, B } },
+        { "March on Hattu",    new int[] { A, A, A } },
+        { "Shehai Summoning",  new int[] { B, B, B } },
+        { "Warrior Wave",      new int[] { S, A, B } },
+        { "Ansei Assault",     new int[] { B, A, B } },
+        { "Ansei's Victory",   new int[] { B, A, B } },
+        { "Battle Meditation", new int[] { C, B, B } },
+        { "No Shira Poet",     new int[] { C, C, C } },
+        { "Way of the Sword",  new int[] { D, D, D } },
 
-        new PhaseCardTier("Blackfeather Knave", PatronId.DUKE_OF_CROWS, GamePhaseTierEnum.S, GamePhaseTierEnum.S, GamePhaseTierEnum.A),
-        new PhaseCardTier("Plunder", PatronId.DUKE_OF_CROWS, GamePhaseTierEnum.S, GamePhaseTierEnum.S, GamePhaseTierEnum.S),
-        new PhaseCardTier("Toll of Flesh", PatronId.DUKE_OF_CROWS, GamePhaseTierEnum.S, GamePhaseTierEnum.S, GamePhaseTierEnum.A),
-        new PhaseCardTier("Toll of Silver", PatronId.DUKE_OF_CROWS, GamePhaseTierEnum.S, GamePhaseTierEnum.S, GamePhaseTierEnum.A),
-        new PhaseCardTier("Murder of Crows", PatronId.DUKE_OF_CROWS, GamePhaseTierEnum.S, GamePhaseTierEnum.S, GamePhaseTierEnum.A),
-        new PhaseCardTier("Pilfer", PatronId.DUKE_OF_CROWS, GamePhaseTierEnum.A, GamePhaseTierEnum.S, GamePhaseTierEnum.A),
-        new PhaseCardTier("Squawking Oratory", PatronId.DUKE_OF_CROWS, GamePhaseTierEnum.A, GamePhaseTierEnum.S, GamePhaseTierEnum.A),
-        new PhaseCardTier("Law of Sovereign Roost", PatronId.DUKE_OF_CROWS, GamePhaseTierEnum.B, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Pool of Shadow", PatronId.DUKE_OF_CROWS, GamePhaseTierEnum.B, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Scratch", PatronId.DUKE_OF_CROWS, GamePhaseTierEnum.A, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Blackfeather Brigand", PatronId.DUKE_OF_CROWS, GamePhaseTierEnum.C, GamePhaseTierEnum.C, GamePhaseTierEnum.C),
-        new PhaseCardTier("Blackfeather Knight", PatronId.DUKE_OF_CROWS, GamePhaseTierEnum.C, GamePhaseTierEnum.B, GamePhaseTierEnum.C),
-        new PhaseCardTier("Peck", PatronId.DUKE_OF_CROWS, GamePhaseTierEnum.C, GamePhaseTierEnum.C, GamePhaseTierEnum.C),
+        { "Rally",                  new int[] { A, S, A } },
+        { "Siege Weapon Volley",    new int[] { A, S, B } },
+        { "The Armory",             new int[] { A, S, A } },
+        { "Banneret",               new int[] { A, S, A } },
+        { "Knight Commander",       new int[] { S, S, A } },
+        { "Reinforcements",         new int[] { S, A, B } },
+        { "Archers' Volley",        new int[] { B, A, B } },
+        { "Legion's Arrival",       new int[] { A, A, B } },
+        { "Shield Bearer",          new int[] { C, B, B } },
+        { "Bangkorai Sentries",     new int[] { C, B, C } },
+        { "Knights of Saint Pelin", new int[] { C, A, C } },
+        { "The Portcullis",         new int[] { C, C, D } },
+        { "Fortify",                new int[] { D, D, D } },
 
-        new PhaseCardTier("Conquest", PatronId.ANSEI, GamePhaseTierEnum.A, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Grand Oratory", PatronId.ANSEI, GamePhaseTierEnum.B, GamePhaseTierEnum.S, GamePhaseTierEnum.S),
-        new PhaseCardTier("Hira's End", PatronId.ANSEI, GamePhaseTierEnum.S, GamePhaseTierEnum.S, GamePhaseTierEnum.S),
-        new PhaseCardTier("Hel Shira Herald", PatronId.ANSEI, GamePhaseTierEnum.B, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("March on Hattu", PatronId.ANSEI, GamePhaseTierEnum.A, GamePhaseTierEnum.A, GamePhaseTierEnum.A),
-        new PhaseCardTier("Shehai Summoning", PatronId.ANSEI, GamePhaseTierEnum.B, GamePhaseTierEnum.B, GamePhaseTierEnum.B),
-        new PhaseCardTier("Warrior Wave", PatronId.ANSEI, GamePhaseTierEnum.S, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Ansei Assault", PatronId.ANSEI, GamePhaseTierEnum.B, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Ansei's Victory", PatronId.ANSEI, GamePhaseTierEnum.B, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Battle Meditation", PatronId.ANSEI, GamePhaseTierEnum.C, GamePhaseTierEnum.B, GamePhaseTierEnum.B),
-        new PhaseCardTier("No Shira Poet", PatronId.ANSEI, GamePhaseTierEnum.C, GamePhaseTierEnum.C, GamePhaseTierEnum.C),
-        new PhaseCardTier("Way of the Sword", PatronId.ANSEI, GamePhaseTierEnum.D, GamePhaseTierEnum.D, GamePhaseTierEnum.D),
+        { "Bag of Tricks",     new int[] { C, B, B } },
+        { "Bewilderment",      new int[] { CURSE, CURSE, CURSE } },
+        { "Grand Larceny",     new int[] { A, A, B } },
+        { "Jarring Lullaby",   new int[] { B, A, B } },
+        { "Jeering Shadow",    new int[] { C, C, C } },
+        { "Moonlit Illusion",  new int[] { B, A, B } },
+        { "Pounce and Profit", new int[] { S, S, B } },
+        { "Prowling Shadow",   new int[] { B, C, C } },
+        { "Ring's Guile",      new int[] { C, C, C } },
+        { "Shadow's Slumber",  new int[] { A, A, B } },
+        { "Slight of Hand",    new int[] { A, B, D } },
+        { "Stubborn Shadow",   new int[] { D, C, D } },
+        { "Twilight Revelry",  new int[] { B, A, B } },
+        { "Swipe",             new int[] { D, D, D } },
 
-        new PhaseCardTier("Rally", PatronId.PELIN, GamePhaseTierEnum.A, GamePhaseTierEnum.S, GamePhaseTierEnum.A),
-        new PhaseCardTier("Siege Weapon Volley", PatronId.PELIN, GamePhaseTierEnum.A, GamePhaseTierEnum.S, GamePhaseTierEnum.B),
-        new PhaseCardTier("The Armory", PatronId.PELIN, GamePhaseTierEnum.A, GamePhaseTierEnum.S, GamePhaseTierEnum.A),
-        new PhaseCardTier("Banneret", PatronId.PELIN, GamePhaseTierEnum.A, GamePhaseTierEnum.S, GamePhaseTierEnum.A),
-        new PhaseCardTier("Knight Commander", PatronId.PELIN, GamePhaseTierEnum.S, GamePhaseTierEnum.S, GamePhaseTierEnum.A),
-        new PhaseCardTier("Reinforcements", PatronId.PELIN, GamePhaseTierEnum.S, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Archers' Volley", PatronId.PELIN, GamePhaseTierEnum.B, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Legion's Arrival", PatronId.PELIN, GamePhaseTierEnum.A, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Shield Bearer", PatronId.PELIN, GamePhaseTierEnum.C, GamePhaseTierEnum.B, GamePhaseTierEnum.B),
-        new PhaseCardTier("Bangkorai Sentries", PatronId.PELIN, GamePhaseTierEnum.C, GamePhaseTierEnum.B, GamePhaseTierEnum.C),
-        new PhaseCardTier("Knights of Saint Pelin", PatronId.PELIN, GamePhaseTierEnum.C, GamePhaseTierEnum.A, GamePhaseTierEnum.C),
-        new PhaseCardTier("The Portcullis", PatronId.PELIN, GamePhaseTierEnum.C, GamePhaseTierEnum.C, GamePhaseTierEnum.D),
-        new PhaseCardTier("Fortify", PatronId.PELIN, GamePhaseTierEnum.D, GamePhaseTierEnum.D, GamePhaseTierEnum.D),
-
-        new PhaseCardTier("Bag of Tricks", PatronId.RAJHIN, GamePhaseTierEnum.C, GamePhaseTierEnum.B, GamePhaseTierEnum.B),
-        new PhaseCardTier("Bewilderment", PatronId.RAJHIN, GamePhaseTierEnum.CURSE, GamePhaseTierEnum.CURSE, GamePhaseTierEnum.CURSE),
-        new PhaseCardTier("Grand Larceny", PatronId.RAJHIN, GamePhaseTierEnum.A, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Jarring Lullaby", PatronId.RAJHIN, GamePhaseTierEnum.B, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Jeering Shadow", PatronId.RAJHIN, GamePhaseTierEnum.C, GamePhaseTierEnum.C, GamePhaseTierEnum.C),
-        new PhaseCardTier("Moonlit Illusion", PatronId.RAJHIN, GamePhaseTierEnum.B, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Pounce and Profit", PatronId.RAJHIN, GamePhaseTierEnum.S, GamePhaseTierEnum.S, GamePhaseTierEnum.B),
-        new PhaseCardTier("Prowling Shadow", PatronId.RAJHIN, GamePhaseTierEnum.B, GamePhaseTierEnum.C, GamePhaseTierEnum.C),
-        new PhaseCardTier("Ring's Guile", PatronId.RAJHIN, GamePhaseTierEnum.C, GamePhaseTierEnum.C, GamePhaseTierEnum.C),
-        new PhaseCardTier("Shadow's Slumber", PatronId.RAJHIN, GamePhaseTierEnum.A, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Slight of Hand", PatronId.RAJHIN, GamePhaseTierEnum.A, GamePhaseTierEnum.B, GamePhaseTierEnum.D),
-        new PhaseCardTier("Stubborn Shadow", PatronId.RAJHIN, GamePhaseTierEnum.D, GamePhaseTierEnum.C, GamePhaseTierEnum.D),
-        new PhaseCardTier("Twilight Revelry", PatronId.RAJHIN, GamePhaseTierEnum.B, GamePhaseTierEnum.A, GamePhaseTierEnum.B),
-        new PhaseCardTier("Swipe", PatronId.RAJHIN, GamePhaseTierEnum.D, GamePhaseTierEnum.D, GamePhaseTierEnum.D),
-
-        new PhaseCardTier("Ambush", PatronId.TREASURY, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION),
-        new PhaseCardTier("Barterer", PatronId.TREASURY, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION),
-        new PhaseCardTier("Black Sacrament", PatronId.TREASURY, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION),
-        new PhaseCardTier("Blackmail", PatronId.TREASURY, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION),
-        new PhaseCardTier("Gold", PatronId.TREASURY, GamePhaseTierEnum.UNKNOWN, GamePhaseTierEnum.CURSE, GamePhaseTierEnum.CURSE),
-        new PhaseCardTier("Harvest Season", PatronId.TREASURY, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION),
-        new PhaseCardTier("Imprisonment", PatronId.TREASURY, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION),
-        new PhaseCardTier("Ragpicker", PatronId.TREASURY, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION),
-        new PhaseCardTier("Tithe", PatronId.TREASURY, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION, GamePhaseTierEnum.CONTRACT_ACTION),
-        new PhaseCardTier("Writ of Coin", PatronId.TREASURY, GamePhaseTierEnum.WOC, GamePhaseTierEnum.B, GamePhaseTierEnum.UNKNOWN),
-        new PhaseCardTier("Unknown", PatronId.TREASURY, GamePhaseTierEnum.UNKNOWN, GamePhaseTierEnum.UNKNOWN, GamePhaseTierEnum.UNKNOWN)
+        { "Ambush",          new [] { CONTRACT_ACTION, CONTRACT_ACTION, CONTRACT_ACTION } },
+        { "Barterer",        new [] { CONTRACT_ACTION, CONTRACT_ACTION, CONTRACT_ACTION } },
+        { "Black Sacrament", new [] { CONTRACT_ACTION, CONTRACT_ACTION, CONTRACT_ACTION } },
+        { "Blackmail",       new [] { CONTRACT_ACTION, CONTRACT_ACTION, CONTRACT_ACTION } },
+        { "Gold",            new [] { UNKNOWN, CURSE, CURSE } },
+        { "Harvest Season",  new [] { CONTRACT_ACTION, CONTRACT_ACTION, CONTRACT_ACTION } },
+        { "Imprisonment",    new [] { CONTRACT_ACTION, CONTRACT_ACTION, CONTRACT_ACTION } },
+        { "Ragpicker",       new [] { CONTRACT_ACTION, CONTRACT_ACTION, CONTRACT_ACTION } },
+        { "Tithe",           new [] { CONTRACT_ACTION, CONTRACT_ACTION, CONTRACT_ACTION } },
+        { "Writ of Coin",    new [] { WOC, B, UNKNOWN } },
+        { "Unknown",         new [] { UNKNOWN, UNKNOWN, UNKNOWN } },
     };
 
-    public static GamePhaseTierEnum GetCardTier(string cardName, int gamePhase)
-    {
-        return Array.Find(CardTierArray, x => x.Name == cardName).Tier[gamePhase];
-    }
+    public static int GetCardTier(string cardName, GamePhase gamePhase) => cardTierDict[cardName][(int)gamePhase];
 }
