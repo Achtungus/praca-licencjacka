@@ -211,7 +211,7 @@ public class BestMCTS : AI
         cardCount = currentPlayer.Hand.Count + currentPlayer.CooldownPile.Count + currentPlayer.DrawPile.Count;
         Debug.Assert(currentPlayer.Played.Count == 0);
         int points = gameState.CurrentPlayer.Prestige;
-        if (points >= 25 || gameState.EnemyPlayer.Prestige >= 30) strategy = new GameStrategy(cardCount, GamePhase.LateGame);
+        if (points >= 27 || gameState.EnemyPlayer.Prestige >= 30) strategy = new GameStrategy(cardCount, GamePhase.LateGame);
         else if (points <= 10 && gameState.EnemyPlayer.Prestige <= 13) strategy = new GameStrategy(cardCount, GamePhase.EarlyGame);
         else strategy = new GameStrategy(cardCount, GamePhase.MidGame);
     }
