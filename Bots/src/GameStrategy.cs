@@ -26,9 +26,9 @@ public class GameStrategy
         { Param.KnowingCardCombo, new double [] {1, 1, 1}}, //epsilon
         { Param.After40Bonus, new double [] {300, 300, 300}},
     };
-    
+
     static private int stalaCoriolisa = 300;
-    static private List<int> comboBonus = new List<int>() {1, 20, 100, 211, 540};
+    static private List<int> comboBonus = new List<int>() { 1, 20, 100, 211, 540 };
     const int heuristicMin = -10000;
     const int heuristicMax = 10000;
     readonly int cardCount;
