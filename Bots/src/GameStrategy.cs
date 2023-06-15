@@ -17,7 +17,7 @@ public class GameStrategy
         { Param.OurPrestige,   new double[] { 10, 60, 200 } },
         { Param.EnemyPrestige, new double[] { -10, -60, -200 } },
         { Param.CardLimit,     new double[] { 20, 17, 17 } }, // do zbadania
-        { Param.ComboPower,    new double[] { 3, 3, 3 } }, 
+        { Param.ComboPower,    new double[] { 3, 3, 3 } },
         { Param.OurAgent,      new double[] { 5, 5, 5 } }, // niezauwazalne
         { Param.EnemyAgent,    new double[] { -60, -80, -150 } },
         { Param.OverCardLimitPenalty, new double[] { 805, 805, 805 } },

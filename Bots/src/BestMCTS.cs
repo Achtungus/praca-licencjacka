@@ -73,7 +73,7 @@ public class MCTSNode
 
     public double Simulate(MCTSNode node, GameStrategy strategy, SeededRandom rng)
     {
-        if (node.endTurn || node.children.Count == 1)
+        if (node.endTurn || (node.children.Count == 1 && node.children[0].Item2.Command == CommandEnum.END_TURN))
         {
             return strategy.Heuristic(node.gameState);
         }
@@ -98,6 +98,7 @@ public class MCTSNode
         return strategy.Heuristic(gameState);
     }
 }
+
 
 public class BestMCTS : AI
 {
@@ -214,6 +215,7 @@ public class BestMCTS : AI
         if (points >= 27 || gameState.EnemyPlayer.Prestige >= 30) strategy = new GameStrategy(cardCount, GamePhase.LateGame);
         else if (points <= 10 && gameState.EnemyPlayer.Prestige <= 13) strategy = new GameStrategy(cardCount, GamePhase.EarlyGame);
         else strategy = new GameStrategy(cardCount, GamePhase.MidGame);
+        Log("23423");
     }
 
     public override Move Play(GameState gameState, List<Move> possibleMoves)
