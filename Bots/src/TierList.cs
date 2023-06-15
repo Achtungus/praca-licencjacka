@@ -52,7 +52,7 @@ public static class GPCardTierList
         { "Pool of Shadow",         new int[] { B, A, B } },
         { "Scratch",                new int[] { A, A, B } },
         { "Blackfeather Brigand",   new int[] { C, C, C } },
-        { "Blackfeather Knight",    new int[] { C, B, C } },
+        { "Blackfeather Knight",    new int[] { B, B, C } },
         { "Peck",                   new int[] { C, C, C } },
 
         { "Conquest",          new int[] { A, A, B } },

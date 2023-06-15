@@ -200,6 +200,38 @@ public class BestMCTS : AI
         return true;
     }
 
+    private bool CheckIfSameCards(List<UniqueCard> l, List<UniqueCard> r){
+        var balance = new Dictionary<UniqueCard, int>();
+        foreach(UniqueCard card in l){
+            if (balance.ContainsKey(card))
+            {
+                balance[card] += 1;
+            }
+            else
+            {
+                balance[card] = 1;
+            }
+        }
+        foreach(UniqueCard card in r){
+            if (balance.ContainsKey(card))
+            {
+                balance[card] -= 1;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        foreach (KeyValuePair<UniqueCard, int> el in balance)
+        {
+            if(el.Value != 0) return false;
+        }
+        return true;
+    }
+    private bool CheckIfSameGameStateAfterOneMove(MCTSNode node, GameState gameState)
+    {
+        return (CheckIfSameCards(node.gameState.CurrentPlayer.Hand, gameState.CurrentPlayer.Hand) && CheckIfSameCards(node.gameState.TavernAvailableCards, gameState.TavernAvailableCards));    
+    }
     public override PatronId SelectPatron(List<PatronId> availablePatrons, int round)
     {
         if (availablePatrons.Contains(PatronId.DUKE_OF_CROWS)) return PatronId.DUKE_OF_CROWS;
@@ -220,6 +252,7 @@ public class BestMCTS : AI
 
     public override Move Play(GameState gameState, List<Move> possibleMoves)
     {
+        Log("----------------------------");
         if (startOfTurn) ChooseStrategy(gameState);
 
         if (possibleMoves.Count == 1 && possibleMoves[0].Command == CommandEnum.END_TURN)
@@ -230,10 +263,19 @@ public class BestMCTS : AI
             return Move.EndTurn();
         }
 
-        if (startOfTurn || !CheckIfPossibleMovesAreTheSame(root!, possibleMoves))
+        if (startOfTurn || !CheckIfSameGameStateAfterOneMove(root!, gameState))
         {
+            Log("Nowe drzewo");
             SeededGameState seededGameState = gameState.ToSeededGameState(seed);
-            root = new MCTSNode(seededGameState, possibleMoves);
+            Move? instantMove = getInstantMove(possibleMoves);
+            if (instantMove is null)
+            {
+                root = new MCTSNode(seededGameState, possibleMoves);
+            }
+            else
+            {
+                root = new MCTSNode(seededGameState, new List<Move> { instantMove });
+            }
             startOfTurn = false;
         }
 
@@ -252,6 +294,8 @@ public class BestMCTS : AI
                 run(root!, rng);
                 actionCounter++;
             }
+            Log(actionCounter.ToString());
+            Log("Ile dzieci: " + root!.children.Count.ToString());
             // Console.WriteLine(actionCounter);
             usedTimeInTurn += timeForMoveComputation;
             (root, move) = root!.children[root!.SelectBestChildIndex()];
