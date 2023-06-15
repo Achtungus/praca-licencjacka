@@ -17,7 +17,7 @@ public class GameStrategy
         { Param.OurPrestige,   new double[] { 10, 60, 200 } },
         { Param.EnemyPrestige, new double[] { -10, -60, -200 } },
         { Param.CardLimit,     new double[] { 20, 17, 17 } }, // do zbadania
-        // { Param.ComboPower,    new double[] { 2, 0, 0 } }, 
+        { Param.ComboPower,    new double[] { 3, 3, 3 } }, 
         { Param.OurAgent,      new double[] { 5, 5, 5 } }, // niezauwazalne
         { Param.EnemyAgent,    new double[] { -60, -80, -150 } },
         { Param.OverCardLimitPenalty, new double[] { 805, 805, 805 } },
@@ -299,25 +299,6 @@ public class GameStrategy
         return ((double)Math.Clamp(val + heuristicMax, 0.0, 2.0 * heuristicMax) / (2.0 * heuristicMax));
     }
 
-    double CombosValue(Dictionary<PatronId, int> dict)
-    {
-        double val = 0;
-        int cnt = 0;
-        foreach (KeyValuePair<PatronId, int> el in dict)
-        {
-            cnt += el.Value;
-        }
-        double wsp = 1;
-        if (cnt > GetWeight(Param.CardLimit))
-        {
-            wsp = GetWeight(Param.CardLimit) / cnt;
-        }
-        foreach (KeyValuePair<PatronId, int> el in dict)
-        {
-            val += comboBonus[Math.Min(comboBonus.Count-1, el.Value)] + Math.Max(0, (el.Value - comboBonus.Count)*stalaCoriolisa); // moze dodac wspolczynnik
-        }
-        return val*wsp;
-    }
     // double CombosValue(Dictionary<PatronId, int> dict)
     // {
     //     double val = 0;
@@ -333,10 +314,29 @@ public class GameStrategy
     //     }
     //     foreach (KeyValuePair<PatronId, int> el in dict)
     //     {
-    //         val += Math.Pow(wsp * el.Value, GetWeight(Param.ComboPower));
+    //         val += comboBonus[Math.Min(comboBonus.Count-1, el.Value)] + Math.Max(0, (el.Value - comboBonus.Count)*stalaCoriolisa); // moze dodac wspolczynnik
     //     }
-    //     return val;
+    //     return val*wsp;
     // }
+    double CombosValue(Dictionary<PatronId, int> dict)
+    {
+        double val = 0;
+        int cnt = 0;
+        foreach (KeyValuePair<PatronId, int> el in dict)
+        {
+            cnt += el.Value;
+        }
+        double wsp = 1;
+        if (cnt > GetWeight(Param.CardLimit))
+        {
+            wsp = GetWeight(Param.CardLimit) / cnt;
+        }
+        foreach (KeyValuePair<PatronId, int> el in dict)
+        {
+            val += Math.Pow(wsp * el.Value, GetWeight(Param.ComboPower));
+        }
+        return val;
+    }
 }
 
 public enum GamePhase
