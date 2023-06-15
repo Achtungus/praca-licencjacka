@@ -10,7 +10,7 @@ namespace Bots;
 
 public class GameStrategy
 {
-    static readonly string[] taunts = new string[] {
+    static readonly HashSet<string> taunts = new HashSet<string> {
         "Stubborn Shadow", "Banneret", "Knight Commander", "Shield Bearer", "Bangkorai Sentries", "Knights of Saint Pelin"
     };
     static readonly Dictionary<Param, double[]> weight = new Dictionary<Param, double[]> {
@@ -40,7 +40,7 @@ public class GameStrategy
         this.currentGamePhase = currentGamePhase;
     }
     double GetWeight(Param param) => weight[param][(int)currentGamePhase];
-    bool IsTaunt(string agentName) => Array.Exists(taunts, name => name == agentName);
+    bool IsTaunt(string agentName) => taunts.Contains(agentName);
 
     double BasicProperties(SeededGameState gameState)
     {
@@ -248,7 +248,7 @@ public class GameStrategy
         value += CombosValue(ourCombos) - CombosValue(enemyCombos);
         foreach (UniqueCard card in gameState.CurrentPlayer.KnownUpcomingDraws)
         {
-            value += (int)HandTierList.GetCardTier(card.Name) * GetWeight(Param.UpcomingCard);
+            value += HandTierList.GetCardTier(card.Name) * GetWeight(Param.UpcomingCard);
             if (ourCombos.ContainsKey(card.Deck))
             {
                 value += ourCombos[card.Deck] * GetWeight(Param.KnowingCardCombo);
@@ -256,7 +256,7 @@ public class GameStrategy
         }
         foreach (UniqueCard card in gameState.EnemyPlayer.KnownUpcomingDraws)
         {
-            value -= (int)HandTierList.GetCardTier(card.Name) * GetWeight(Param.UpcomingCard);
+            value -= HandTierList.GetCardTier(card.Name) * GetWeight(Param.UpcomingCard);
             if (enemyCombos.ContainsKey(card.Deck))
             {
                 value -= ourCombos[card.Deck] * GetWeight(Param.KnowingCardCombo);

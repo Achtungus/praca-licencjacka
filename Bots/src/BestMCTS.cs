@@ -17,6 +17,7 @@ public class MCTSNode
     public SeededGameState gameState;
     public double score = 0;
     public int visits = 0;
+    public bool full = false;
     public bool endTurn;
     public MCTSNode(SeededGameState myState, List<Move>? possibleMoves = null)
     {
@@ -31,6 +32,7 @@ public class MCTSNode
         }
         else
         {
+            full = true;
             endTurn = true;
         }
     }
@@ -40,7 +42,11 @@ public class MCTSNode
         // Maybe pass log already, jeśli lewe to nieprawda, to prawe tez
         if (child is null || child.visits == 0)
         {
-            return int.MaxValue;
+            return double.MaxValue;
+        }
+        if (child.full)
+        {
+            return double.MinValue;
         }
         return child.score + 1.41 * Math.Sqrt((Math.Log(parentSimulations)) / child.visits);
     }
@@ -106,12 +112,13 @@ public class BestMCTS : AI
     readonly SeededRandom rng = new(seed);
     MCTSNode? root = null;
     TimeSpan usedTimeInTurn = TimeSpan.FromSeconds(0);
-    TimeSpan timeForMoveComputation = TimeSpan.FromSeconds(0.3);
+    TimeSpan timeForMoveComputation = TimeSpan.FromSeconds(3.0);
     TimeSpan turnTimeout = TimeSpan.FromSeconds(29.9);
     bool startOfTurn = true;
     int roundNumber = 1;
     GameStrategy strategy = new GameStrategy(10, GamePhase.EarlyGame);
     int cardCount = 0;
+    int totCreated = 0;
 
     public BestMCTS() { }
 
@@ -133,6 +140,7 @@ public class BestMCTS : AI
 
     private double run(MCTSNode node, SeededRandom rng)
     {
+        // if (node.computed) return node.score;
         if (node.endTurn || node.visits == 0)
         {
             double score = node.Simulate(node, strategy, rng);
@@ -158,6 +166,7 @@ public class BestMCTS : AI
 
         if (node.children[selectedChild].Item1 is null)
         {
+            totCreated += 1;
             var move = node.children[selectedChild].Item2;
             if (move.Command == CommandEnum.END_TURN)
             {
@@ -179,6 +188,12 @@ public class BestMCTS : AI
         }
 
         double result = run(node.children[selectedChild].Item1!, rng);
+        node.full = true;
+        foreach (var (child, move) in node.children)
+        {
+            node.full &= (child is not null && child.full);
+        }
+
         node.visits += 1;
         node.score = Math.Max(node.score, result);
         return result;
@@ -200,9 +215,11 @@ public class BestMCTS : AI
         return true;
     }
 
-    private bool CheckIfSameCards(List<UniqueCard> l, List<UniqueCard> r){
+    private bool CheckIfSameCards(List<UniqueCard> l, List<UniqueCard> r)
+    {
         var balance = new Dictionary<UniqueCard, int>();
-        foreach(UniqueCard card in l){
+        foreach (UniqueCard card in l)
+        {
             if (balance.ContainsKey(card))
             {
                 balance[card] += 1;
@@ -212,7 +229,8 @@ public class BestMCTS : AI
                 balance[card] = 1;
             }
         }
-        foreach(UniqueCard card in r){
+        foreach (UniqueCard card in r)
+        {
             if (balance.ContainsKey(card))
             {
                 balance[card] -= 1;
@@ -224,13 +242,13 @@ public class BestMCTS : AI
         }
         foreach (KeyValuePair<UniqueCard, int> el in balance)
         {
-            if(el.Value != 0) return false;
+            if (el.Value != 0) return false;
         }
         return true;
     }
     private bool CheckIfSameGameStateAfterOneMove(MCTSNode node, GameState gameState)
     {
-        return (CheckIfSameCards(node.gameState.CurrentPlayer.Hand, gameState.CurrentPlayer.Hand) && CheckIfSameCards(node.gameState.TavernAvailableCards, gameState.TavernAvailableCards));    
+        return (CheckIfSameCards(node.gameState.CurrentPlayer.Hand, gameState.CurrentPlayer.Hand) && CheckIfSameCards(node.gameState.TavernAvailableCards, gameState.TavernAvailableCards));
     }
     public override PatronId SelectPatron(List<PatronId> availablePatrons, int round)
     {
@@ -247,12 +265,11 @@ public class BestMCTS : AI
         if (points >= 27 || gameState.EnemyPlayer.Prestige >= 30) strategy = new GameStrategy(cardCount, GamePhase.LateGame);
         else if (points <= 10 && gameState.EnemyPlayer.Prestige <= 13) strategy = new GameStrategy(cardCount, GamePhase.EarlyGame);
         else strategy = new GameStrategy(cardCount, GamePhase.MidGame);
-        Log("23423");
     }
 
     public override Move Play(GameState gameState, List<Move> possibleMoves)
     {
-        Log("----------------------------");
+        // Log("----------------------------");
         if (startOfTurn) ChooseStrategy(gameState);
 
         if (possibleMoves.Count == 1 && possibleMoves[0].Command == CommandEnum.END_TURN)
@@ -265,7 +282,8 @@ public class BestMCTS : AI
 
         if (startOfTurn || !CheckIfSameGameStateAfterOneMove(root!, gameState))
         {
-            Log("Nowe drzewo");
+            // Log("Nowe drzewo");
+            // Console.WriteLine("Nowe drzewo");
             SeededGameState seededGameState = gameState.ToSeededGameState(seed);
             Move? instantMove = getInstantMove(possibleMoves);
             if (instantMove is null)
@@ -282,22 +300,30 @@ public class BestMCTS : AI
         Move move;
         if (usedTimeInTurn + timeForMoveComputation >= turnTimeout)
         {
+            Debug.Assert(false);
             move = possibleMoves.PickRandom(rng);
         }
         else
         {
             int actionCounter = 0;
-            Stopwatch s = new Stopwatch();
-            s.Start();
-            while (s.Elapsed < timeForMoveComputation)
+            totCreated = 0;
+            for (int runs = 0; runs < 1000 && !root!.full; runs++)
             {
                 run(root!, rng);
                 actionCounter++;
             }
-            Log(actionCounter.ToString());
-            Log("Ile dzieci: " + root!.children.Count.ToString());
+            // Stopwatch s = new Stopwatch();
+            // s.Start();
+            // while (s.Elapsed < timeForMoveComputation && !root!.full)
+            // {
+            //     run(root!, rng);
+            //     actionCounter++;
+            // }
+            // Log(actionCounter.ToString());
+            // Log("Ile dzieci: " + root!.children.Count.ToString());
             // Console.WriteLine(actionCounter);
-            usedTimeInTurn += timeForMoveComputation;
+            // Console.WriteLine($"totCreated = {totCreated}");
+            // usedTimeInTurn += timeForMoveComputation;
             (root, move) = root!.children[root!.SelectBestChildIndex()];
         }
 
@@ -313,6 +339,8 @@ public class BestMCTS : AI
     public override void GameEnd(EndGameState state, FullGameState? finalBoardState)
     {
         Console.WriteLine("-------------------------------------------");
+        Console.WriteLine($"Reason: {state.Reason}");
+        Console.WriteLine($"Seed: {finalBoardState.InitialSeed}");
         if (finalBoardState!.EnemyPlayer.PlayerID == PlayerEnum.PLAYER1)
             Console.WriteLine("Player 1: " + finalBoardState!.EnemyPlayer.Prestige.ToString());
         else

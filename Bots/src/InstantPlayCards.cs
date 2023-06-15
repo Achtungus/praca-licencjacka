@@ -2,7 +2,7 @@ namespace Bots;
 
 public static class InstantPlayCards
 {
-    static readonly string[] instantPlayCardsList = {
+    static readonly HashSet<string> instantPlayCards = new HashSet<string> {
         // HLAALU
         // "Currency Exchange",
         "Luxury Exports",
@@ -109,6 +109,6 @@ public static class InstantPlayCards
 
     public static bool IsInstantPlay(string cardName)
     {
-        return Array.Exists(instantPlayCardsList, el => el == cardName);
+        return instantPlayCards.Contains(cardName);
     }
 }
