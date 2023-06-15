@@ -26,9 +26,9 @@ public class GameStrategy
         { Param.KnowingCardCombo, new double [] {1, 1, 1}}, //epsilon
         { Param.After40Bonus, new double [] {300, 300, 300}},
     };
-    
+
     static private int stalaCoriolisa = 300;
-    static private List<int> comboBonus = new List<int>() {1, 20, 100, 211, 540};
+    static private List<int> comboBonus = new List<int>() { 1, 20, 100, 211, 540 };
     const int heuristicMin = -10000;
     const int heuristicMax = 10000;
     readonly int cardCount;
@@ -314,9 +314,9 @@ public class GameStrategy
         }
         foreach (KeyValuePair<PatronId, int> el in dict)
         {
-            val += comboBonus[Math.Min(comboBonus.Count-1, el.Value)] + Math.Max(0, (el.Value - comboBonus.Count)*stalaCoriolisa); // moze dodac wspolczynnik
+            val += comboBonus[Math.Min(comboBonus.Count - 1, el.Value)] + Math.Max(0, (el.Value - comboBonus.Count) * stalaCoriolisa); // moze dodac wspolczynnik
         }
-        return val*wsp;
+        return val * wsp;
     }
     // double CombosValue(Dictionary<PatronId, int> dict)
     // {
