@@ -10,8 +10,9 @@ namespace ParamEvolution;
 
 public class GameStrategy
 {
-    static readonly HashSet<string> taunts = new HashSet<string> {
-        "Stubborn Shadow", "Banneret", "Knight Commander", "Shield Bearer", "Bangkorai Sentries", "Knights of Saint Pelin"
+    static readonly HashSet<CardId> taunts = new HashSet<CardId> {
+        CardId.STUBBORN_SHADOW, CardId.BANNERET, CardId.KNIGHT_COMMANDER, CardId.SHIELD_BEARER, CardId.BANGKORAI_SENTRIES, CardId.KNIGHTS_OF_SAINT_PELIN
+        // "Stubborn Shadow", "Banneret", "Knight Commander", "Shield Bearer", "Bangkorai Sentries", "Knights of Saint Pelin"
     };
 
     static private int stalaCoriolisa = 200;
@@ -28,8 +29,9 @@ public class GameStrategy
         this.currentGamePhase = currentGamePhase;
         this.gameParams = gameParams;
     }
+
     double GetWeight(Param param) => gameParams.GetParamValue(param, currentGamePhase);
-    bool IsTaunt(string agentName) => taunts.Contains(agentName);
+    bool IsTaunt(CardId agentId) => taunts.Contains(agentId);
 
     double BasicProperties(SeededGameState gameState)
     {
@@ -37,7 +39,7 @@ public class GameStrategy
         int power = gameState.CurrentPlayer.Power;
         foreach (SerializedAgent agent in gameState.EnemyPlayer.Agents)
         {
-            if (IsTaunt(agent.RepresentingCard.Name))
+            if (IsTaunt(agent.RepresentingCard.CommonId))
             {
                 power -= agent.CurrentHp;
             }
@@ -59,7 +61,7 @@ public class GameStrategy
             {
                 switch (patron)
                 {
-                    case PatronId.TREASURY:
+                    case PatronId.TREASURY: // moze do wywalenia
                         break;
                     case PatronId.ANSEI:
                         enemyPatronDist += 1;
@@ -74,7 +76,7 @@ public class GameStrategy
             }
             else if (owner == PlayerEnum.NO_PLAYER_SELECTED)
             {
-                enemyPatronDist += 1;
+                if (patron != PatronId.TREASURY) enemyPatronDist += 1;
                 val += PatronTierList.GetPatronTier(patron, currentGamePhase).neutral;
             }
             else
@@ -112,7 +114,7 @@ public class GameStrategy
 
         foreach (UniqueCard card in ourCardsDraw)
         {
-            value += GPCardTierList.GetCardTier(card.Name, currentGamePhase) * GetWeight(Param.TierMultiplier);
+            value += GPCardTierList.GetCardTier((int)card.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
             if (card.Deck != PatronId.TREASURY)
             {
                 if (ourCombos.ContainsKey(card.Deck))
@@ -127,7 +129,7 @@ public class GameStrategy
         }
         foreach (UniqueCard card in ourCardsHand)
         {
-            value += GPCardTierList.GetCardTier(card.Name, currentGamePhase) * GetWeight(Param.TierMultiplier);
+            value += GPCardTierList.GetCardTier((int)card.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
             if (card.Deck != PatronId.TREASURY)
             {
                 if (ourCombos.ContainsKey(card.Deck))
@@ -142,7 +144,7 @@ public class GameStrategy
         }
         foreach (UniqueCard card in ourCardsPlayed)
         {
-            value += GPCardTierList.GetCardTier(card.Name, currentGamePhase) * GetWeight(Param.TierMultiplier);
+            value += GPCardTierList.GetCardTier((int)card.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
             if (card.Deck != PatronId.TREASURY)
             {
                 if (ourCombos.ContainsKey(card.Deck))
@@ -157,7 +159,7 @@ public class GameStrategy
         }
         foreach (UniqueCard card in ourCardsCooldown)
         {
-            value += GPCardTierList.GetCardTier(card.Name, currentGamePhase) * GetWeight(Param.TierMultiplier);
+            value += GPCardTierList.GetCardTier((int)card.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
             if (card.Deck != PatronId.TREASURY)
             {
                 if (ourCombos.ContainsKey(card.Deck))
@@ -174,7 +176,7 @@ public class GameStrategy
         //enemy
         foreach (UniqueCard card in enemyCardsDraw)
         {
-            value -= GPCardTierList.GetCardTier(card.Name, currentGamePhase) * GetWeight(Param.TierMultiplier);
+            value -= GPCardTierList.GetCardTier((int)card.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
             if (card.Deck != PatronId.TREASURY)
             {
                 if (enemyCombos.ContainsKey(card.Deck))
@@ -189,7 +191,7 @@ public class GameStrategy
         }
         foreach (UniqueCard card in enemyCardsHand)
         {
-            value -= GPCardTierList.GetCardTier(card.Name, currentGamePhase) * GetWeight(Param.TierMultiplier);
+            value -= GPCardTierList.GetCardTier((int)card.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
             if (card.Deck != PatronId.TREASURY)
             {
                 if (enemyCombos.ContainsKey(card.Deck))
@@ -204,7 +206,7 @@ public class GameStrategy
         }
         foreach (UniqueCard card in enemyCardsPlayed)
         {
-            value -= GPCardTierList.GetCardTier(card.Name, currentGamePhase) * GetWeight(Param.TierMultiplier);
+            value -= GPCardTierList.GetCardTier((int)card.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
             if (card.Deck != PatronId.TREASURY)
             {
                 if (enemyCombos.ContainsKey(card.Deck))
@@ -219,7 +221,7 @@ public class GameStrategy
         }
         foreach (UniqueCard card in enemyCardsCooldown)
         {
-            value -= GPCardTierList.GetCardTier(card.Name, currentGamePhase) * GetWeight(Param.TierMultiplier);
+            value -= GPCardTierList.GetCardTier((int)card.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
             if (card.Deck != PatronId.TREASURY)
             {
                 if (enemyCombos.ContainsKey(card.Deck))
@@ -233,11 +235,44 @@ public class GameStrategy
             }
         }
 
+        foreach (SerializedAgent agent in gameState.CurrentPlayer.Agents)
+        {
+            if (agent.RepresentingCard.Type != CardType.CONTRACT_AGENT)
+            {
+                value += GPCardTierList.GetCardTier((int)agent.RepresentingCard.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
+                if (ourCombos.ContainsKey(agent.RepresentingCard.Deck))
+                {
+                    ourCombos[agent.RepresentingCard.Deck] += 1;
+                }
+                else
+                {
+                    ourCombos[agent.RepresentingCard.Deck] = 1;
+                }
+            }
+            value += agent.CurrentHp * GetWeight(Param.OurPrestige) + GetWeight(Param.OurAgent);
+        }
+
+        foreach (SerializedAgent agent in gameState.EnemyPlayer.Agents)
+        {
+            if (agent.RepresentingCard.Type != CardType.CONTRACT_AGENT)
+            {
+                value -= GPCardTierList.GetCardTier((int)agent.RepresentingCard.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
+                if (enemyCombos.ContainsKey(agent.RepresentingCard.Deck))
+                {
+                    enemyCombos[agent.RepresentingCard.Deck] += 1;
+                }
+                else
+                {
+                    enemyCombos[agent.RepresentingCard.Deck] = 1;
+                }
+            }
+            value += AgentTier.GetCardTier(agent.RepresentingCard.CommonId) * GetWeight(Param.EnemyAgent); // moze cos jeszcze zwiazanego z hp
+        }
 
         value += CombosValue(ourCombos) - CombosValue(enemyCombos);
         foreach (UniqueCard card in gameState.CurrentPlayer.KnownUpcomingDraws)
         {
-            value += (int)HandTierList.GetCardTier(card.Name) * GetWeight(Param.UpcomingCard);
+            value += HandTierList.GetCardTier(card.CommonId) * GetWeight(Param.UpcomingCard);
             if (ourCombos.ContainsKey(card.Deck))
             {
                 value += ourCombos[card.Deck] * GetWeight(Param.KnowingCardCombo);
@@ -245,23 +280,14 @@ public class GameStrategy
         }
         foreach (UniqueCard card in gameState.EnemyPlayer.KnownUpcomingDraws)
         {
-            value -= (int)HandTierList.GetCardTier(card.Name) * GetWeight(Param.UpcomingCard);
+            value -= HandTierList.GetCardTier(card.CommonId) * GetWeight(Param.UpcomingCard);
             if (enemyCombos.ContainsKey(card.Deck))
             {
                 value -= ourCombos[card.Deck] * GetWeight(Param.KnowingCardCombo);
             }
         }
-
-        foreach (SerializedAgent agent in gameState.CurrentPlayer.Agents)
-        {
-            value += agent.CurrentHp * GetWeight(Param.OurPrestige) + GetWeight(Param.OurAgent);
-        }
-
-        foreach (SerializedAgent agent in gameState.EnemyPlayer.Agents)
-        {
-            value += AgentTier.GetCardTier(agent.RepresentingCard.Name) * GetWeight(Param.EnemyAgent) - agent.CurrentHp;
-        }
         return value;
+
     }
 
     public double Heuristic(SeededGameState gameState)
@@ -275,7 +301,7 @@ public class GameStrategy
         int power = gameState.CurrentPlayer.Power;
         foreach (SerializedAgent agent in gameState.EnemyPlayer.Agents)
         {
-            if (IsTaunt(agent.RepresentingCard.Name)) power -= agent.CurrentHp;
+            if (IsTaunt(agent.RepresentingCard.CommonId)) power -= agent.CurrentHp;
         }
         power = Math.Max(power, 0);
         int afterRoundPoint = gameState.CurrentPlayer.Prestige + power;
@@ -285,6 +311,7 @@ public class GameStrategy
         {
             val += GetWeight(Param.After40Bonus) * (afterRoundPoint - gameState.EnemyPlayer.Prestige);
         }
+        // Console.WriteLine(((double)Math.Clamp(val + heuristicMax, 0.0, 2.0 * heuristicMax) / (2.0 * heuristicMax)));
         return ((double)Math.Clamp(val + heuristicMax, 0.0, 2.0 * heuristicMax) / (2.0 * heuristicMax));
     }
 
@@ -310,7 +337,7 @@ public class GameStrategy
 
     public double CardEvaluation(UniqueCard card, SeededGameState gameState)
     {
-        double val = GPCardTierList.GetCardTier(card.Name, currentGamePhase);
+        double val = GPCardTierList.GetCardTier((int)card.CommonId, currentGamePhase);
 
         var ourCombos = new Dictionary<PatronId, int>();
         ourCombos[card.Deck] = 0;
@@ -339,6 +366,8 @@ public class GameStrategy
         }
         return val;
     }
+    // }
+
 }
 
 public enum GamePhase

@@ -1,17 +1,13 @@
 using ScriptsOfTribute;
 
-using System.Collections.Concurrent;
-using System.IO;
-using System.Diagnostics;
-
 namespace ParamEvolution;
 
 public class Generation
 {
     static readonly Random rnd = new Random();
     const int generationSize = 6;
-    const int noOfChildren = 10;
-    const int noOfFights = 10;
+    const int noOfChildren = 20;
+    const int noOfFights = 250;
     int noOfGeneration = 0;
     List<int> scores = new();
     List<GameParams> currentGeneration = new();
@@ -47,8 +43,11 @@ public class Generation
         int totStates = noOfFights * 2 * noOfChildren;
         Console.WriteLine($"Total states: {totStates}");
 
-        ulong initSeed = (ulong)rnd.NextInt64(1, 2000000000);
+        ulong initSeed = (ulong)rnd.NextInt64(10000, 2000000000);
         int[] wins = new int[noOfChildren];
+
+        int totPlayed = 0;
+
         Parallel.For(0, noOfChildren * 2, i =>
         {
             int childIdx = i / 2;
@@ -56,24 +55,34 @@ public class Generation
             {
                 for (ulong k = 0; k < noOfFights; k++)
                 {
-                    var cMCTS = new BestMCTS(children[childIdx]);
-                    var cgMCTS = new BestMCTS(currentGeneration[0]);
+                    var cMCTS = new BestMCTS(children[childIdx], initSeed - (ulong)1 - (ulong)childIdx);
+                    var cgMCTS = new BestMCTS(currentGeneration[0], initSeed);
                     var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cMCTS, cgMCTS);
-                    game.Seed = initSeed + k;
+                    game.Seed = initSeed + k + 1;
                     var (endState, endBoardState) = game.Play();
                     if (endState.Winner == PlayerEnum.PLAYER1) Interlocked.Increment(ref wins[childIdx]);
+                    Interlocked.Increment(ref totPlayed);
+                    if (totPlayed % 100 == 0)
+                    {
+                        Console.WriteLine($"{totPlayed} / {totStates}");
+                    }
                 }
             }
             else
             {
                 for (ulong k = 0; k < noOfFights; k++)
                 {
-                    var cMCTS = new BestMCTS(children[childIdx]);
-                    var cgMCTS = new BestMCTS(currentGeneration[0]);
-                    var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cMCTS, cgMCTS);
-                    game.Seed = initSeed + k;
+                    var cMCTS = new BestMCTS(children[childIdx], initSeed - (ulong)1 - (ulong)childIdx);
+                    var cgMCTS = new BestMCTS(currentGeneration[0], initSeed);
+                    var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cgMCTS, cMCTS);
+                    game.Seed = initSeed + k + 1;
                     var (endState, endBoardState) = game.Play();
                     if (endState.Winner == PlayerEnum.PLAYER2) Interlocked.Increment(ref wins[childIdx]);
+                    Interlocked.Increment(ref totPlayed);
+                    if (totPlayed % 100 == 0)
+                    {
+                        Console.WriteLine($"{totPlayed} / {totStates}");
+                    }
                 }
             }
         });
