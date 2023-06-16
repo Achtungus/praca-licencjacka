@@ -20,7 +20,7 @@ public class GameStrategy
         { Param.CardLimit,     new double[] { 20, 17, 17 } }, // do zbadania
         { Param.ComboPower,    new double[] { 3, 3, 3 } },
         { Param.OurAgent,      new double[] { 5, 5, 5 } }, // niezauwazalne
-        { Param.EnemyAgent,    new double[] { -60, -80, -150 } },
+        { Param.EnemyAgent,    new double[] { -40, -80, -150 } },
         { Param.OverCardLimitPenalty, new double[] { 805, 805, 805 } },
         { Param.UpcomingCard,  new double[] { 15, 25, 100 } },
         { Param.TierMultiplier, new double[] {10, 10, 10}},
@@ -266,12 +266,14 @@ public class GameStrategy
 
         foreach (SerializedAgent agent in gameState.CurrentPlayer.Agents)
         {
+            value += GPCardTierList.GetCardTier((int)agent.RepresentingCard.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
             value += agent.CurrentHp * GetWeight(Param.OurPrestige) + GetWeight(Param.OurAgent);
         }
 
         foreach (SerializedAgent agent in gameState.EnemyPlayer.Agents)
         {
-            value += AgentTier.GetCardTier(agent.RepresentingCard.CommonId) * GetWeight(Param.EnemyAgent) - agent.CurrentHp;
+            value -= GPCardTierList.GetCardTier((int)agent.RepresentingCard.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
+            value += AgentTier.GetCardTier(agent.RepresentingCard.CommonId) * GetWeight(Param.EnemyAgent); // moze cos jeszcze zwiazanego z hp
         }
         return value;
     }
