@@ -125,6 +125,8 @@ public class BestMCTS : AI
     }
     List<Move>? getInstantMoves(List<Move> moves, SeededGameState gameState)
     {
+        return null;
+        if (moves.Count == 1) return null;
         if (gameState.BoardState == BoardState.CHOICE_PENDING)
         {
             List<Move> toReturn = new();
@@ -138,7 +140,7 @@ public class BestMCTS : AI
                         UniqueCard card = mcm!.Choices[0];
                         if (card.Name == "Bewilderment") return new List<Move> { mv };
                         if (card.Name == "Gold" && Gold.Count == 0) Gold.Add(mv);
-                        if (card.Cost == 0) toReturn.Add(mv); // moze tez byc car.Type == 'Starter'
+                        if (card.Cost == 0) toReturn.Add(mv); // moze tez byc card.Type == 'Starter'
                     }
                     if (Gold.Count == 1) return Gold;
                     if (toReturn.Count > 0) return toReturn;
@@ -151,8 +153,7 @@ public class BestMCTS : AI
                         if (mcm!.Choices.Count != 1) continue;
                         choices.Add((mv, strategy.CardEvaluation(mcm!.Choices[0], gameState)));
                     }
-                    PairOnlySecond comparer = new PairOnlySecond();
-                    choices.Sort(comparer);
+                    choices.Sort(new PairOnlySecond());
                     List<string> cards = new();
                     for (int i = 0; i < Math.Min(3, choices.Count); i++)
                     {
@@ -173,6 +174,7 @@ public class BestMCTS : AI
                         }
                         if (flag) toReturn.Add(mv);
                     }
+                    Debug.Assert(toReturn.Count > 0);
                     if (toReturn.Count > 0) return toReturn;
                     return null;
                 case ChoiceFollowUp.REFRESH_CARDS: // tu i tak musi byc duzo wierzcholkow i guess
@@ -187,8 +189,7 @@ public class BestMCTS : AI
                         }
                         possibilities.Add((mv, val));
                     }
-                    PairOnlySecond comparer2 = new PairOnlySecond();
-                    possibilities.Sort(comparer2);
+                    possibilities.Sort(new PairOnlySecond());
                     possibilities.Reverse();
                     if (gameState.PendingChoice.MaxChoices == 3)
                     {

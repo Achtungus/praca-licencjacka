@@ -26,12 +26,6 @@ var noOfRunsOption = new Option<int>(
     getDefaultValue: () => 1);
 noOfRunsOption.AddAlias("-n");
 
-var threadsOption = new Option<int>(
-    name: "--threads",
-    description: "Number of CPU threads to use.",
-    getDefaultValue: () => 1);
-threadsOption.AddAlias("-t");
-
 var seedOption = new Option<ulong?>(
     name: "--seed",
     description: "Specify seed for RNG. In case of multiple games, each subsequent game will be played with <seed+1>.",
@@ -110,7 +104,6 @@ var bot2NameArgument = new Argument<Type?>(name: "bot2Name", description: "Name 
 var mainCommand = new RootCommand("A game runner for bots.")
 {
     noOfRunsOption,
-    threadsOption,
     seedOption,
     bot1NameArgument,
     bot2NameArgument,
@@ -124,14 +117,8 @@ ScriptsOfTribute.AI.ScriptsOfTribute PrepareGame(AI bot1, AI bot2, ulong seed)
 }
 
 var returnValue = 0;
-mainCommand.SetHandler((runs, noOfThreads, maybeSeed, bot1Type, bot2Type) =>
+mainCommand.SetHandler((runs, maybeSeed, bot1Type, bot2Type) =>
 {
-    if (noOfThreads < 1)
-    {
-        Console.Error.WriteLine("ERROR: Can't use less than 1 thread.");
-        returnValue = -1;
-    }
-
     ulong actualSeed;
     if (maybeSeed is null)
     {
@@ -142,52 +129,34 @@ mainCommand.SetHandler((runs, noOfThreads, maybeSeed, bot1Type, bot2Type) =>
         actualSeed = (ulong)maybeSeed;
     }
 
-
-    if (noOfThreads > Environment.ProcessorCount)
-    {
-        Console.Error.WriteLine($"WARNING: More threads ({noOfThreads}) specified than logical processor count ({Environment.ProcessorCount}).");
-    }
+    var results = new EndGameState[runs];
+    var currentSeed = actualSeed;
+    var watch = Stopwatch.StartNew();
 
     Parallel.For(0, runs,
         runIndex =>
         {
-            var results = new EndGameState[amount];
-            var bot1 = (AI?)Activator.CreateInstance(bot1Type!);
-            var bot2 = (AI?)Activator.CreateInstance(bot2Type!);
-            var game = PrepareGame(bot1!, bot2!, seed);
-            seed += 1;
-            var (endReason, _) = game.Play();
-            results[i] = endReason;
-            // Interlocked.Add(ref totalSize, size);
+            for (int i = 0; i < 10; i++)
+            {
+                var bot1 = (AI?)Activator.CreateInstance(bot1Type!);
+                var bot2 = (AI?)Activator.CreateInstance(bot2Type!);
+                var game = PrepareGame(bot1!, bot2!, currentSeed + (ulong)runIndex);
+                var (endReason, _) = game.Play();
+                results[runIndex] = endReason;
+            }
         });
-
-
-    var watch = Stopwatch.StartNew();
-    var currentSeed = actualSeed;
-    for (var i = 0; i < noOfThreads; i++)
-    {
-        var spawnAdditionalGame = gamesPerThreadRemainder <= 0 ? 0 : 1;
-        gamesPerThreadRemainder -= 1;
-        var gamesToPlay = gamesPerThread + spawnAdditionalGame;
-        Console.WriteLine($"Playing {gamesToPlay} games in thread #{i}");
-        var threadNo = i;
-        var currentSeedCopy = currentSeed;
-        threads[i] = Task.Factory.StartNew(() => PlayGames(gamesToPlay, bot1Type!, bot2Type!, threadNo, currentSeedCopy));
-        currentSeed += (ulong)gamesToPlay;
-    }
-    Task.WaitAll(threads.ToArray<Task>());
 
     var timeTaken = watch.ElapsedMilliseconds;
 
     var counter = new GameEndStatsCounter();
-    threads.SelectMany(t => t.Result).ToList().ForEach(r => counter.Add(r));
+    results.ToList().ForEach(r => counter.Add(r));
 
     Console.WriteLine($"\nInitial seed used: {actualSeed}");
     Console.WriteLine($"Total time taken: {timeTaken}ms");
     Console.WriteLine("\nStats from the games played:");
     Console.WriteLine(counter.ToString());
 
-}, noOfRunsOption, threadsOption, seedOption, bot1NameArgument, bot2NameArgument);
+}, noOfRunsOption, seedOption, bot1NameArgument, bot2NameArgument);
 
 mainCommand.Invoke(args);
 
