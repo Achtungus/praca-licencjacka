@@ -4,8 +4,8 @@ public static class GPCardTierList
 {
     const int S = 50;
     const int A = 30;
-    const int WOC = 20;
-    const int B = 10;
+    const int B = 15;
+    const int WOC = 10;
     const int C = 3;
     const int D = 1;
     const int UNKNOWN = 0;

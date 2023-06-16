@@ -112,11 +112,111 @@ public class BestMCTS : AI
     int roundNumber = 1;
     GameStrategy strategy = new GameStrategy(10, GamePhase.EarlyGame);
     int cardCount = 0;
-
     public BestMCTS() { }
 
-    Move? getInstantMove(List<Move> moves)
+    public class PairOnlySecond : IComparer<(Move, double)> // czy w dobra strone sortuje? ma byc rosnaco
     {
+        public int Compare((Move, double) a, (Move, double) b)
+        {
+            if (a.Item2 < b.Item2) return -1;
+            if (a.Item2 > b.Item2) return 1;
+            return 0;
+        }
+    }
+    List<Move>? getInstantMoves(List<Move> moves, SeededGameState gameState)
+    {
+        if (gameState.BoardState == BoardState.CHOICE_PENDING)
+        {
+            List<Move> toReturn = new();
+            switch (gameState.PendingChoice!.ChoiceFollowUp)
+            {
+                case ChoiceFollowUp.COMPLETE_TREASURY:
+                    List<Move> Gold = new();
+                    foreach (Move mv in moves)
+                    {
+                        var mcm = mv as MakeChoiceMove<UniqueCard>;
+                        UniqueCard card = mcm!.Choices[0];
+                        if (card.Name == "Bewilderment") return new List<Move> { mv };
+                        if (card.Name == "Gold" && Gold.Count == 0) Gold.Add(mv);
+                        if (card.Cost == 0) toReturn.Add(mv); // moze tez byc car.Type == 'Starter'
+                    }
+                    if (Gold.Count == 1) return Gold;
+                    if (toReturn.Count > 0) return toReturn;
+                    return new List<Move> { moves[0] };
+                case ChoiceFollowUp.DESTROY_CARDS:
+                    List<(Move, double)> choices = new();
+                    foreach (Move mv in moves)
+                    {
+                        var mcm = mv as MakeChoiceMove<UniqueCard>;
+                        if (mcm!.Choices.Count != 1) continue;
+                        choices.Add((mv, strategy.CardEvaluation(mcm!.Choices[0], gameState)));
+                    }
+                    PairOnlySecond comparer = new PairOnlySecond();
+                    choices.Sort(comparer);
+                    List<string> cards = new();
+                    for (int i = 0; i < Math.Min(3, choices.Count); i++)
+                    {
+                        var mcm = choices[i].Item1 as MakeChoiceMove<UniqueCard>;
+                        cards.Add(mcm!.Choices[0].Name);
+                    }
+                    foreach (Move mv in moves)
+                    {
+                        var mcm = mv as MakeChoiceMove<UniqueCard>;
+                        bool flag = true;
+                        foreach (UniqueCard card in mcm!.Choices)
+                        {
+                            if (!cards.Contains(card.Name))
+                            {
+                                flag = false;
+                                break;
+                            }
+                        }
+                        if (flag) toReturn.Add(mv);
+                    }
+                    Debug.Assert(toReturn.Count > 0);
+                    return toReturn;
+                case ChoiceFollowUp.REFRESH_CARDS: // tu i tak musi byc duzo wierzcholkow i guess
+                    List<(Move, double)> possibilities = new();
+                    foreach (Move mv in moves)
+                    {
+                        var mcm = mv as MakeChoiceMove<UniqueCard>;
+                        double val = 0;
+                        foreach (UniqueCard card in mcm!.Choices)
+                        {
+                            val += strategy.CardEvaluation(card, gameState);
+                        }
+                        possibilities.Add((mv, val));
+                    }
+                    PairOnlySecond comparer2 = new PairOnlySecond();
+                    possibilities.Sort(comparer2);
+                    possibilities.Reverse();
+                    if (gameState.PendingChoice.MaxChoices == 3)
+                    {
+                        for (int i = 0; i < Math.Min(10, possibilities.Count); i++)
+                        {
+                            toReturn.Add(possibilities[i].Item1);
+                        }
+                    }
+                    if (gameState.PendingChoice.MaxChoices == 2)
+                    {
+                        for (int i = 0; i < Math.Min(6, possibilities.Count); i++)
+                        {
+                            toReturn.Add(possibilities[i].Item1);
+                        }
+                    }
+                    if (gameState.PendingChoice.MaxChoices == 1)
+                    {
+                        for (int i = 0; i < Math.Min(3, possibilities.Count); i++)
+                        {
+                            toReturn.Add(possibilities[i].Item1);
+                        }
+                    }
+                    Debug.Assert(toReturn.Count > 0);
+                    return toReturn;
+                default:
+                    return null;
+            }
+        }
         foreach (Move mv in moves)
         {
             if (mv.Command == CommandEnum.PLAY_CARD)
@@ -124,7 +224,7 @@ public class BestMCTS : AI
                 var mvCopy = mv as SimpleCardMove;
                 if (InstantPlayCards.IsInstantPlay(mvCopy!.Card.Name))
                 {
-                    return mv;
+                    return new List<Move> { mv };
                 }
             }
         }
@@ -166,14 +266,14 @@ public class BestMCTS : AI
             else
             {
                 var (childGameState, childPossibleMoves) = node.gameState.ApplyMove(move);
-                Move? instantMove = getInstantMove(childPossibleMoves);
-                if (instantMove is null)
+                List<Move>? instantMoves = getInstantMoves(childPossibleMoves, childGameState);
+                if (instantMoves is null)
                 {
                     node.children[selectedChild] = (new MCTSNode(childGameState, childPossibleMoves), move);
                 }
                 else
                 {
-                    node.children[selectedChild] = (new MCTSNode(childGameState, new List<Move> { instantMove }), move);
+                    node.children[selectedChild] = (new MCTSNode(childGameState, instantMoves), move);
                 }
             }
         }
@@ -200,9 +300,11 @@ public class BestMCTS : AI
         return true;
     }
 
-    private bool CheckIfSameCards(List<UniqueCard> l, List<UniqueCard> r){
+    private bool CheckIfSameCards(List<UniqueCard> l, List<UniqueCard> r)
+    {
         var balance = new Dictionary<UniqueCard, int>();
-        foreach(UniqueCard card in l){
+        foreach (UniqueCard card in l)
+        {
             if (balance.ContainsKey(card))
             {
                 balance[card] += 1;
@@ -212,7 +314,8 @@ public class BestMCTS : AI
                 balance[card] = 1;
             }
         }
-        foreach(UniqueCard card in r){
+        foreach (UniqueCard card in r)
+        {
             if (balance.ContainsKey(card))
             {
                 balance[card] -= 1;
@@ -224,13 +327,13 @@ public class BestMCTS : AI
         }
         foreach (KeyValuePair<UniqueCard, int> el in balance)
         {
-            if(el.Value != 0) return false;
+            if (el.Value != 0) return false;
         }
         return true;
     }
     private bool CheckIfSameGameStateAfterOneMove(MCTSNode node, GameState gameState)
     {
-        return (CheckIfSameCards(node.gameState.CurrentPlayer.Hand, gameState.CurrentPlayer.Hand) && CheckIfSameCards(node.gameState.TavernAvailableCards, gameState.TavernAvailableCards));    
+        return (CheckIfSameCards(node.gameState.CurrentPlayer.Hand, gameState.CurrentPlayer.Hand) && CheckIfSameCards(node.gameState.TavernAvailableCards, gameState.TavernAvailableCards));
     }
     public override PatronId SelectPatron(List<PatronId> availablePatrons, int round)
     {
@@ -247,12 +350,11 @@ public class BestMCTS : AI
         if (points >= 27 || gameState.EnemyPlayer.Prestige >= 30) strategy = new GameStrategy(cardCount, GamePhase.LateGame);
         else if (points <= 10 && gameState.EnemyPlayer.Prestige <= 13) strategy = new GameStrategy(cardCount, GamePhase.EarlyGame);
         else strategy = new GameStrategy(cardCount, GamePhase.MidGame);
-        Log("23423");
     }
 
     public override Move Play(GameState gameState, List<Move> possibleMoves)
     {
-        Log("----------------------------");
+        // Log("----------------------------");
         if (startOfTurn) ChooseStrategy(gameState);
 
         if (possibleMoves.Count == 1 && possibleMoves[0].Command == CommandEnum.END_TURN)
@@ -265,16 +367,16 @@ public class BestMCTS : AI
 
         if (startOfTurn || !CheckIfSameGameStateAfterOneMove(root!, gameState))
         {
-            Log("Nowe drzewo");
+            // Log("Nowe drzewo");
             SeededGameState seededGameState = gameState.ToSeededGameState(seed);
-            Move? instantMove = getInstantMove(possibleMoves);
-            if (instantMove is null)
+            List<Move>? instantMoves = getInstantMoves(possibleMoves, seededGameState);
+            if (instantMoves is null)
             {
                 root = new MCTSNode(seededGameState, possibleMoves);
             }
             else
             {
-                root = new MCTSNode(seededGameState, new List<Move> { instantMove });
+                root = new MCTSNode(seededGameState, instantMoves);
             }
             startOfTurn = false;
         }
@@ -294,8 +396,9 @@ public class BestMCTS : AI
                 run(root!, rng);
                 actionCounter++;
             }
-            Log(actionCounter.ToString());
-            Log("Ile dzieci: " + root!.children.Count.ToString());
+            // Console.WriteLine(actionCounter);
+            // Log(actionCounter.ToString());
+            // Log("Ile dzieci: " + root!.children.Count.ToString());
             // Console.WriteLine(actionCounter);
             usedTimeInTurn += timeForMoveComputation;
             (root, move) = root!.children[root!.SelectBestChildIndex()];
@@ -313,6 +416,9 @@ public class BestMCTS : AI
     public override void GameEnd(EndGameState state, FullGameState? finalBoardState)
     {
         Console.WriteLine("-------------------------------------------");
+        Console.WriteLine(state.Reason);
+        Console.WriteLine(state.AdditionalContext);
+        Console.WriteLine(state.Winner);
         if (finalBoardState!.EnemyPlayer.PlayerID == PlayerEnum.PLAYER1)
             Console.WriteLine("Player 1: " + finalBoardState!.EnemyPlayer.Prestige.ToString());
         else
