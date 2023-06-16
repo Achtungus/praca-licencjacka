@@ -132,10 +132,7 @@ public class BestMCTS : AI
     List<Move>? getInstantMoves(List<Move> moves, SeededGameState gameState)
     {
         return null;
-<<<<<<< HEAD
         if (moves.Count == 1) return null;
-=======
->>>>>>> d43389979de7fad5b8ea86875ef8fe8fa43d38a0
         if (gameState.BoardState == BoardState.CHOICE_PENDING)
         {
             List<Move> toReturn = new();
@@ -322,15 +319,32 @@ public class BestMCTS : AI
 
     private bool CheckIfSameCards(List<UniqueCard> l, List<UniqueCard> r)
     {
+        var balance = new Dictionary<string, int>();
         foreach (UniqueCard card in l)
         {
-            if (!r.Contains(card))
-                return false;
+            if (balance.ContainsKey(card.Name))
+            {
+                balance[card.Name] += 1;
+            }
+            else
+            {
+                balance[card.Name] = 1;
+            }
         }
         foreach (UniqueCard card in r)
         {
-            if (!l.Contains(card))
+            if (balance.ContainsKey(card.Name))
+            {
+                balance[card.Name] -= 1;
+            }
+            else
+            {
                 return false;
+            }
+        }
+        foreach (KeyValuePair<string, int> el in balance)
+        {
+            if (el.Value != 0) return false;
         }
         return true;
     }
@@ -338,9 +352,74 @@ public class BestMCTS : AI
     {
         return (CheckIfSameCards(node.gameState.CurrentPlayer.Hand, gameState.CurrentPlayer.Hand)
         && CheckIfSameCards(node.gameState.TavernAvailableCards, gameState.TavernAvailableCards)
-        && CheckIfSameCards(node.gameState.CurrentPlayer.CooldownPile, gameState.CurrentPlayer.CooldownPile)
-        && CheckIfSameCards(node.gameState.CurrentPlayer.DrawPile, gameState.CurrentPlayer.DrawPile)
+        && CheckIfSameCards(node.gameState.CurrentPlayer.CooldownPile, gameState.CurrentPlayer.CooldownPile) // chyba niepotrzebne
+        && CheckIfSameCards(node.gameState.CurrentPlayer.DrawPile, gameState.CurrentPlayer.DrawPile)    // chyba niepotrzebne
         );
+    }
+
+    private bool CheckIfSameEffects(List<UniqueEffect> e1, List<UniqueEffect> e2)
+    {
+        var balance = new Dictionary<(string, EffectType, int, int), int>();
+        foreach (UniqueEffect ef in e1)
+        {
+            if (balance.ContainsKey((ef.ParentCard.Name, ef.Type, ef.Amount, ef.Combo)))
+            {
+                balance[(ef.ParentCard.Name, ef.Type, ef.Amount, ef.Combo)] += 1;
+            }
+            else
+            {
+                balance[(ef.ParentCard.Name, ef.Type, ef.Amount, ef.Combo)] = 1;
+            }
+        }
+        foreach (UniqueEffect ef in e2)
+        {
+            if (balance.ContainsKey((ef.ParentCard.Name, ef.Type, ef.Amount, ef.Combo)))
+            {
+                balance[(ef.ParentCard.Name, ef.Type, ef.Amount, ef.Combo)] -= 1;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        foreach (KeyValuePair<(string, EffectType, int, int), int> el in balance)
+        {
+            if (el.Value != 0) return false;
+        }
+        return true;
+    }
+    private bool areIsomorphic(Move mv1, Move mv2)
+    {
+        if (mv1.Command != mv2.Command) return false;
+        if (mv1.Command == CommandEnum.END_TURN) return true;
+        if (mv1.Command == CommandEnum.CALL_PATRON)
+        {
+            var spm1 = mv1 as SimplePatronMove;
+            var spm2 = mv2 as SimplePatronMove;
+            Debug.Assert(spm1 is not null && spm2 is not null);
+            return (spm1!.PatronId == spm2!.PatronId);
+        }
+        if (mv1.Command == CommandEnum.MAKE_CHOICE)
+        {
+            var mcm1 = mv1 as MakeChoiceMove<UniqueCard>;
+            var mcm2 = mv2 as MakeChoiceMove<UniqueCard>;
+            if (mcm1 is null && mcm2 is null)
+            {
+                var mcm21 = mv1 as MakeChoiceMove<UniqueEffect>;
+                var mcm22 = mv2 as MakeChoiceMove<UniqueEffect>;
+                Debug.Assert(mcm21 is not null && mcm22 is not null);
+                return CheckIfSameEffects(mcm21!.Choices, mcm22!.Choices);
+            }
+            else if (mcm1 is not null && mcm2 is not null)
+            {
+                return CheckIfSameCards(mcm1!.Choices, mcm2!.Choices);
+            }
+            return false;
+        }
+        var scm1 = mv1 as SimpleCardMove;
+        var scm2 = mv2 as SimpleCardMove;
+        Debug.Assert(scm1 is not null && scm2 is not null);
+        return (scm1!.Card.Name == scm2!.Card.Name);
     }
     public override PatronId SelectPatron(List<PatronId> availablePatrons, int round)
     {
@@ -387,6 +466,7 @@ public class BestMCTS : AI
         }
         else
         {
+            if (gameState.BoardState != root!.gameState.BoardState) Console.WriteLine("Tutaj");
             Debug.Assert(gameState.BoardState == root!.gameState.BoardState);
         }
 
@@ -401,7 +481,7 @@ public class BestMCTS : AI
         {
             int actionCounter = 0;
             totCreated = 0;
-            for (int runs = 0; runs < 200 && !root!.full; runs++)
+            for (int runs = 0; runs < 250 && !root!.full; runs++)
             {
                 run(root!, rng);
                 actionCounter++;
@@ -420,43 +500,51 @@ public class BestMCTS : AI
             // usedTimeInTurn += timeForMoveComputation;
             (root, move) = root!.children[root!.SelectBestChildIndex()];
         }
-
+        Move move_out = possibleMoves[0];
+        foreach (Move mv in possibleMoves)
+        {
+            if (areIsomorphic(move, mv))
+            {
+                move_out = mv;
+                break;
+            }
+        }
         if (move.Command == CommandEnum.END_TURN)
         {
             usedTimeInTurn = TimeSpan.FromSeconds(0);
             startOfTurn = true;
         }
-        return move;
+        return move_out;
     }
 
     public override void GameEnd(EndGameState state, FullGameState? finalBoardState)
     {
-        Console.WriteLine("-------------------------------------------");
-        Console.WriteLine(state.Reason);
-        if (state.Reason == GameEndReason.INCORRECT_MOVE)
-        {
-            Console.WriteLine("-------------------------------------------");
-            Console.WriteLine(state.AdditionalContext);
-            Console.WriteLine("-------------------------------------------");
-            Console.WriteLine(finalBoardState.CurrentPlayer.CooldownPile);
-            Console.WriteLine(finalBoardState.CurrentPlayer.DrawPile);
-            Console.WriteLine(finalBoardState.CurrentPlayer.Hand);
-            Console.WriteLine(finalBoardState.CurrentPlayer.Played);
-            Console.WriteLine("-------------------------------------------");
-            Console.WriteLine(finalBoardState.EnemyPlayer.CooldownPile);
-            Console.WriteLine(finalBoardState.EnemyPlayer.DrawPile);
-            Console.WriteLine(finalBoardState.EnemyPlayer.Hand);
-            Console.WriteLine(finalBoardState.EnemyPlayer.Played);
-            Console.WriteLine("-------------------------------------------");
-        }
-        Console.WriteLine(state.Winner);
-        if (finalBoardState!.EnemyPlayer.PlayerID == PlayerEnum.PLAYER1)
-            Console.WriteLine("Player 1: " + finalBoardState!.EnemyPlayer.Prestige.ToString());
-        else
-            Console.WriteLine("Player 1: " + finalBoardState!.CurrentPlayer.Prestige.ToString());
-        if (finalBoardState!.EnemyPlayer.PlayerID == PlayerEnum.PLAYER2)
-            Console.WriteLine("Player 2: " + finalBoardState!.EnemyPlayer.Prestige.ToString());
-        else
-            Console.WriteLine("Player 2: " + finalBoardState!.CurrentPlayer.Prestige.ToString());
+        // Console.WriteLine("-------------------------------------------");
+        // Console.WriteLine(state.Reason);
+        // Console.WriteLine(state.AdditionalContext);
+        // if (state.Reason == GameEndReason.INCORRECT_MOVE)
+        // {
+        //     Console.WriteLine("-------------------------------------------");
+        //     Console.WriteLine("-------------------------------------------");
+        //     Console.WriteLine(finalBoardState.CurrentPlayer.CooldownPile);
+        //     Console.WriteLine(finalBoardState.CurrentPlayer.DrawPile);
+        //     Console.WriteLine(finalBoardState.CurrentPlayer.Hand);
+        //     Console.WriteLine(finalBoardState.CurrentPlayer.Played);
+        //     Console.WriteLine("-------------------------------------------");
+        //     Console.WriteLine(finalBoardState.EnemyPlayer.CooldownPile);
+        //     Console.WriteLine(finalBoardState.EnemyPlayer.DrawPile);
+        //     Console.WriteLine(finalBoardState.EnemyPlayer.Hand);
+        //     Console.WriteLine(finalBoardState.EnemyPlayer.Played);
+        //     Console.WriteLine("-------------------------------------------");
+        // }
+        // Console.WriteLine(state.Winner);
+        // if (finalBoardState!.EnemyPlayer.PlayerID == PlayerEnum.PLAYER1)
+        //     Console.WriteLine("Player 1: " + finalBoardState!.EnemyPlayer.Prestige.ToString());
+        // else
+        //     Console.WriteLine("Player 1: " + finalBoardState!.CurrentPlayer.Prestige.ToString());
+        // if (finalBoardState!.EnemyPlayer.PlayerID == PlayerEnum.PLAYER2)
+        //     Console.WriteLine("Player 2: " + finalBoardState!.EnemyPlayer.Prestige.ToString());
+        // else
+        //     Console.WriteLine("Player 2: " + finalBoardState!.CurrentPlayer.Prestige.ToString());
     }
 }

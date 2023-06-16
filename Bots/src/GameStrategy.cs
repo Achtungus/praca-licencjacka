@@ -70,7 +70,7 @@ public class GameStrategy
             {
                 switch (patron)
                 {
-                    case PatronId.TREASURY:
+                    case PatronId.TREASURY: // moze do wywalenia
                         break;
                     case PatronId.ANSEI:
                         enemyPatronDist += 1;
@@ -85,7 +85,7 @@ public class GameStrategy
             }
             else if (owner == PlayerEnum.NO_PLAYER_SELECTED)
             {
-                enemyPatronDist += 1;
+                if (patron != PatronId.TREASURY) enemyPatronDist += 1;
                 val += PatronTierList.GetPatronTier(patron, currentGamePhase).neutral;
             }
             else
@@ -296,6 +296,7 @@ public class GameStrategy
         {
             val += GetWeight(Param.After40Bonus) * (afterRoundPoint - gameState.EnemyPlayer.Prestige);
         }
+        // Console.WriteLine(((double)Math.Clamp(val + heuristicMax, 0.0, 2.0 * heuristicMax) / (2.0 * heuristicMax)));
         return ((double)Math.Clamp(val + heuristicMax, 0.0, 2.0 * heuristicMax) / (2.0 * heuristicMax));
     }
 
