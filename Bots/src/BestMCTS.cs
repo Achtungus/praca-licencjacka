@@ -173,8 +173,8 @@ public class BestMCTS : AI
                         }
                         if (flag) toReturn.Add(mv);
                     }
-                    Debug.Assert(toReturn.Count > 0);
-                    return toReturn;
+                    if (toReturn.Count > 0) return toReturn;
+                    return null;
                 case ChoiceFollowUp.REFRESH_CARDS: // tu i tak musi byc duzo wierzcholkow i guess
                     List<(Move, double)> possibilities = new();
                     foreach (Move mv in moves)
@@ -206,12 +206,15 @@ public class BestMCTS : AI
                     }
                     if (gameState.PendingChoice.MaxChoices == 1)
                     {
+
                         for (int i = 0; i < Math.Min(3, possibilities.Count); i++)
                         {
                             toReturn.Add(possibilities[i].Item1);
                         }
                     }
-                    Debug.Assert(toReturn.Count > 0);
+                    // Debug.Assert(toReturn.Count > 0);
+                    // return null;
+                    if (toReturn.Count == 0) return null;
                     return toReturn;
                 default:
                     return null;
