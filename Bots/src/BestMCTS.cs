@@ -115,9 +115,7 @@ public class BestMCTS : AI
     TimeSpan timeForMoveComputation = TimeSpan.FromSeconds(3.0);
     TimeSpan turnTimeout = TimeSpan.FromSeconds(29.9);
     bool startOfTurn = true;
-    int roundNumber = 1;
     GameStrategy strategy = new GameStrategy(10, GamePhase.EarlyGame);
-    int cardCount = 0;
     int totCreated = 0;
 
     public BestMCTS() { }
@@ -133,6 +131,7 @@ public class BestMCTS : AI
     }
     List<Move>? getInstantMoves(List<Move> moves, SeededGameState gameState)
     {
+        return null;
         if (gameState.BoardState == BoardState.CHOICE_PENDING)
         {
             List<Move> toReturn = new();
@@ -244,7 +243,6 @@ public class BestMCTS : AI
 
     private double run(MCTSNode node, SeededRandom rng)
     {
-        // if (node.computed) return node.score;
         if (node.endTurn || node.visits == 0)
         {
             double score = node.Simulate(node, strategy, rng);
@@ -321,38 +319,25 @@ public class BestMCTS : AI
 
     private bool CheckIfSameCards(List<UniqueCard> l, List<UniqueCard> r)
     {
-        var balance = new Dictionary<UniqueCard, int>();
         foreach (UniqueCard card in l)
         {
-            if (balance.ContainsKey(card))
-            {
-                balance[card] += 1;
-            }
-            else
-            {
-                balance[card] = 1;
-            }
+            if (!r.Contains(card))
+                return false;
         }
         foreach (UniqueCard card in r)
         {
-            if (balance.ContainsKey(card))
-            {
-                balance[card] -= 1;
-            }
-            else
-            {
+            if (!l.Contains(card))
                 return false;
-            }
-        }
-        foreach (KeyValuePair<UniqueCard, int> el in balance)
-        {
-            if (el.Value != 0) return false;
         }
         return true;
     }
     private bool CheckIfSameGameStateAfterOneMove(MCTSNode node, GameState gameState)
     {
-        return (CheckIfSameCards(node.gameState.CurrentPlayer.Hand, gameState.CurrentPlayer.Hand) && CheckIfSameCards(node.gameState.TavernAvailableCards, gameState.TavernAvailableCards));
+        return (CheckIfSameCards(node.gameState.CurrentPlayer.Hand, gameState.CurrentPlayer.Hand)
+        && CheckIfSameCards(node.gameState.TavernAvailableCards, gameState.TavernAvailableCards)
+        && CheckIfSameCards(node.gameState.CurrentPlayer.CooldownPile, gameState.CurrentPlayer.CooldownPile)
+        && CheckIfSameCards(node.gameState.CurrentPlayer.DrawPile, gameState.CurrentPlayer.DrawPile)
+        );
     }
     public override PatronId SelectPatron(List<PatronId> availablePatrons, int round)
     {
@@ -363,7 +348,7 @@ public class BestMCTS : AI
     void ChooseStrategy(GameState gameState)
     {
         var currentPlayer = gameState.CurrentPlayer;
-        cardCount = currentPlayer.Hand.Count + currentPlayer.CooldownPile.Count + currentPlayer.DrawPile.Count;
+        int cardCount = currentPlayer.Hand.Count + currentPlayer.CooldownPile.Count + currentPlayer.DrawPile.Count;
         Debug.Assert(currentPlayer.Played.Count == 0);
         int points = gameState.CurrentPlayer.Prestige;
         if (points >= 27 || gameState.EnemyPlayer.Prestige >= 30) strategy = new GameStrategy(cardCount, GamePhase.LateGame);
@@ -378,14 +363,13 @@ public class BestMCTS : AI
         if (possibleMoves.Count == 1 && possibleMoves[0].Command == CommandEnum.END_TURN)
         {
             usedTimeInTurn = TimeSpan.FromSeconds(0);
-            roundNumber += 1;
             startOfTurn = true;
             return Move.EndTurn();
         }
 
         if (startOfTurn || !CheckIfSameGameStateAfterOneMove(root!, gameState))
         {
-            // Log("Nowe drzewo");
+            // Console.WriteLine("Nowe drzewo");
             SeededGameState seededGameState = gameState.ToSeededGameState(seed);
             List<Move>? instantMoves = getInstantMoves(possibleMoves, seededGameState);
             if (instantMoves is null)
@@ -398,6 +382,11 @@ public class BestMCTS : AI
             }
             startOfTurn = false;
         }
+        else
+        {
+            Debug.Assert(gameState.BoardState == root!.gameState.BoardState);
+        }
+
 
         Move move;
         if (usedTimeInTurn + timeForMoveComputation >= turnTimeout)
@@ -409,7 +398,7 @@ public class BestMCTS : AI
         {
             int actionCounter = 0;
             totCreated = 0;
-            for (int runs = 0; runs < 1000 && !root!.full; runs++)
+            for (int runs = 0; runs < 200 && !root!.full; runs++)
             {
                 run(root!, rng);
                 actionCounter++;
@@ -432,7 +421,6 @@ public class BestMCTS : AI
         if (move.Command == CommandEnum.END_TURN)
         {
             usedTimeInTurn = TimeSpan.FromSeconds(0);
-            roundNumber += 1;
             startOfTurn = true;
         }
         return move;
@@ -442,7 +430,22 @@ public class BestMCTS : AI
     {
         Console.WriteLine("-------------------------------------------");
         Console.WriteLine(state.Reason);
-        Console.WriteLine(state.AdditionalContext);
+        if (state.Reason == GameEndReason.INCORRECT_MOVE)
+        {
+            Console.WriteLine("-------------------------------------------");
+            Console.WriteLine(state.AdditionalContext);
+            Console.WriteLine("-------------------------------------------");
+            Console.WriteLine(finalBoardState.CurrentPlayer.CooldownPile);
+            Console.WriteLine(finalBoardState.CurrentPlayer.DrawPile);
+            Console.WriteLine(finalBoardState.CurrentPlayer.Hand);
+            Console.WriteLine(finalBoardState.CurrentPlayer.Played);
+            Console.WriteLine("-------------------------------------------");
+            Console.WriteLine(finalBoardState.EnemyPlayer.CooldownPile);
+            Console.WriteLine(finalBoardState.EnemyPlayer.DrawPile);
+            Console.WriteLine(finalBoardState.EnemyPlayer.Hand);
+            Console.WriteLine(finalBoardState.EnemyPlayer.Played);
+            Console.WriteLine("-------------------------------------------");
+        }
         Console.WriteLine(state.Winner);
         if (finalBoardState!.EnemyPlayer.PlayerID == PlayerEnum.PLAYER1)
             Console.WriteLine("Player 1: " + finalBoardState!.EnemyPlayer.Prestige.ToString());

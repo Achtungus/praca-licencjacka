@@ -9,8 +9,8 @@ namespace ParamEvolution;
 public class Generation
 {
     static Random rnd = new Random();
-    const int numberOfChildren = 4;
-    const int numberOfFights = 50;
+    const int numberOfChildren = 10;
+    const int numberOfFights = 250;
     int currentGenerationNumber = 0;
 
     List<GameParams> currentGeneration = new();
@@ -20,7 +20,7 @@ public class Generation
         currentGeneration.Add(gameParams);
         for (int i = 0; i + 1 < numberOfChildren; i++)
         {
-            currentGeneration.Add(gameParams.Mutate(0.1, 0.1));
+            currentGeneration.Add(gameParams.Mutate(1.0, 0.3));
         }
         for (int i = 0; i < numberOfChildren; i++)
         {
@@ -46,14 +46,11 @@ public class Generation
         List<(int, int, int)> fights = new();
         for (int i = 0; i < children.Count; i++)
         {
-            for (int j = 0; j < currentGeneration.Count; j++)
-            {
-                fights.Add((i, j, 1));
-                fights.Add((i, j, 2));
-            }
+            fights.Add((i, 0, 1));
+            fights.Add((i, 0, 2));
         }
 
-        int totStates = currentGeneration.Count * children.Count * 2 * numberOfFights;
+        int totStates = children.Count * 2 * numberOfFights;
         Console.WriteLine($"{totStates} stanow");
 
         ulong initSeed = (ulong)rnd.Next(1, 2000000000);
@@ -102,7 +99,7 @@ public class Generation
             return wins;
         }
 
-        const int noOfThreads = 4;
+        const int noOfThreads = 14;
         var threads = new Task<List<int>>[noOfThreads];
         var watki = new List<(int, int, int)>[noOfThreads];
         for (int i = 0; i < noOfThreads; i++)
@@ -171,15 +168,24 @@ public class Generation
     public void NextGeneration()
     {
         List<GameParams> children = new();
-        children.AddRange(currentGeneration);
-        for (int i = 0; i < currentGeneration.Count; i++)
+        // children.AddRange(currentGeneration);
+
+        for (int i = 0; i < 20; i++)
         {
-            for (int j = i + 1; j < currentGeneration.Count; j++)
-            {
-                GameParams child = GameParams.Combine(currentGeneration[i], currentGeneration[j]);
-                children.Add(child.Mutate(3, 0.05));
-            }
+            int a = rnd.Next(0, currentGeneration.Count - 1);
+            int b = rnd.Next(0, currentGeneration.Count - 1);
+            GameParams child = GameParams.Combine(currentGeneration[a], currentGeneration[b]);
+            children.Add(child.Mutate(0.3, 0.1));
         }
+
+        // for (int i = 0; i < currentGeneration.Count; i++)
+        // {
+        //     for (int j = i + 1; j < currentGeneration.Count; j++)
+        //     {
+        //         GameParams child = GameParams.Combine(currentGeneration[i], currentGeneration[j]);
+        //         children.Add(child.Mutate(3, 0.05));
+        //     }
+        // }
 
         children = SelectChildren(children);
 
