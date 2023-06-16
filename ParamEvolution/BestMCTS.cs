@@ -397,10 +397,10 @@ public class BestMCTS : AI
 
     public override void GameEnd(EndGameState state, FullGameState? finalBoardState)
     {
-        Console.WriteLine("-------------------------------------------");
+        // Console.WriteLine("-------------------------------------------");
         Console.WriteLine(state.Reason);
-        Console.WriteLine(state.AdditionalContext);
-        Console.WriteLine(state.Winner);
+        // Console.WriteLine(state.AdditionalContext);
+        // Console.WriteLine(state.Winner);
         // if (finalBoardState!.EnemyPlayer.PlayerID == PlayerEnum.PLAYER1)
         //     Console.WriteLine("Player 1: " + finalBoardState!.EnemyPlayer.Prestige.ToString());
         // else

@@ -8,21 +8,22 @@ namespace ParamEvolution;
 
 public class Generation
 {
-    static Random rnd = new Random();
-    const int numberOfChildren = 10;
-    const int numberOfFights = 250;
-    int currentGenerationNumber = 0;
-
-    List<GameParams> currentGeneration = new();
+    static readonly Random rnd = new Random();
+    const int generationSize = 6;
+    const int noOfChildren = 10;
+    const int noOfFights = 10;
+    int noOfGeneration = 0;
     List<int> scores = new();
+    List<GameParams> currentGeneration = new();
+
     public void CreateFirstGeneration(GameParams gameParams)
     {
         currentGeneration.Add(gameParams);
-        for (int i = 0; i + 1 < numberOfChildren; i++)
+        for (int i = 0; i + 1 < generationSize; i++)
         {
             currentGeneration.Add(gameParams.Mutate(1.0, 0.3));
         }
-        for (int i = 0; i < numberOfChildren; i++)
+        for (int i = 0; i < generationSize; i++)
         {
             scores.Add(0);
         }
@@ -30,9 +31,9 @@ public class Generation
 
     public void SaveGeneration()
     {
-        string dirPath = $"../../../Generations/Generation_{currentGenerationNumber}";
+        string dirPath = $"../../../Generations/Generation_{noOfGeneration}";
         Directory.CreateDirectory(dirPath);
-        for (int i = 0; i < currentGeneration.Count; i++)
+        for (int i = 0; i < generationSize; i++)
         {
             using (StreamWriter sw = File.CreateText(dirPath + $"/GameParams_{i}_{scores[i]}.txt"))
             {
@@ -43,134 +44,87 @@ public class Generation
 
     List<GameParams> SelectChildren(List<GameParams> children)
     {
-        List<(int, int, int)> fights = new();
-        for (int i = 0; i < children.Count; i++)
-        {
-            fights.Add((i, 0, 1));
-            fights.Add((i, 0, 2));
-        }
+        int totStates = noOfFights * 2 * noOfChildren;
+        Console.WriteLine($"Total states: {totStates}");
 
-        int totStates = children.Count * 2 * numberOfFights;
-        Console.WriteLine($"{totStates} stanow");
-
-        ulong initSeed = (ulong)rnd.Next(1, 2000000000);
-        List<int> PlayGames(List<(int, int, int)> fightsForThread, int threadNo)
+        ulong initSeed = (ulong)rnd.NextInt64(1, 2000000000);
+        int[] wins = new int[noOfChildren];
+        Parallel.For(0, noOfChildren * 2, i =>
         {
-            List<int> wins = new();
-            for (int i = 0; i < children.Count; i++)
+            int childIdx = i / 2;
+            if (i % 2 == 1)
             {
-                wins.Add(0);
-            }
-            foreach (var (i, j, player) in fightsForThread)
-            {
-                if (player == 1)
+                for (ulong k = 0; k < noOfFights; k++)
                 {
-                    for (ulong k = 0; k < numberOfFights; k++)
-                    {
-                        var cMCTS = new BestMCTS(children[i]);
-                        var cgMCTS = new BestMCTS(currentGeneration[j]);
-                        var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cMCTS, cgMCTS);
-                        game.Seed = initSeed + k;
-                        var (endState, endBoardState) = game.Play();
-                        if (endState.Winner == PlayerEnum.PLAYER1)
-                        {
-                            wins[i] += 1;
-                        }
-                    }
-                }
-                else
-                {
-                    for (ulong k = 0; k < numberOfFights; k++)
-                    {
-                        var cMCTS = new BestMCTS(children[i]);
-                        var cgMCTS = new BestMCTS(currentGeneration[j]);
-                        var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cgMCTS, cMCTS);
-                        game.Seed = initSeed + k;
-                        var (endState, endBoardState) = game.Play();
-                        if (endState.Winner == PlayerEnum.PLAYER2)
-                        {
-                            wins[i] += 1;
-                        }
-                    }
+                    var cMCTS = new BestMCTS(children[childIdx]);
+                    var cgMCTS = new BestMCTS(currentGeneration[0]);
+                    var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cMCTS, cgMCTS);
+                    game.Seed = initSeed + k;
+                    var (endState, endBoardState) = game.Play();
+                    if (endState.Winner == PlayerEnum.PLAYER1) Interlocked.Increment(ref wins[childIdx]);
                 }
             }
-
-            Console.WriteLine($"Thread #{threadNo} finished.");
-            return wins;
-        }
-
-        const int noOfThreads = 14;
-        var threads = new Task<List<int>>[noOfThreads];
-        var watki = new List<(int, int, int)>[noOfThreads];
-        for (int i = 0; i < noOfThreads; i++)
-        {
-            watki[i] = new();
-        }
-        for (var i = 0; i < noOfThreads; i++)
-        {
-            var threadFights = new List<(int, int, int)>();
-            for (int j = 0; j < fights.Count; j++)
+            else
             {
-                if (j % noOfThreads == i)
-                    threadFights.Add(fights[j]);
+                for (ulong k = 0; k < noOfFights; k++)
+                {
+                    var cMCTS = new BestMCTS(children[childIdx]);
+                    var cgMCTS = new BestMCTS(currentGeneration[0]);
+                    var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cMCTS, cgMCTS);
+                    game.Seed = initSeed + k;
+                    var (endState, endBoardState) = game.Play();
+                    if (endState.Winner == PlayerEnum.PLAYER2) Interlocked.Increment(ref wins[childIdx]);
+                }
             }
-            var xd = i;
-            Console.WriteLine($"Playing {threadFights.Count} games in thread #{i}");
-            threads[i] = Task.Factory.StartNew(() => PlayGames(threadFights, xd));
-        }
-        Task.WaitAll(threads.ToArray<Task>());
+        });
 
-        List<(int, int)> wins = new();
-        for (int i = 0; i < children.Count; i++)
+        Console.WriteLine($"Generation {noOfGeneration}:");
+        for (int i = 0; i < noOfChildren; i++)
         {
-            wins.Add((0, i));
-        }
-
-        for (int i = 0; i < noOfThreads; i++)
-        {
-            var res = threads[i].Result;
-            for (int j = 0; j < numberOfChildren; j++)
-            {
-                wins[j] = (wins[j].Item1 + res[j], wins[j].Item2);
-            }
-        }
-
-        Console.WriteLine($"Generation {currentGenerationNumber}:");
-        for (int i = 0; i < children.Count; i++)
-        {
-            Console.WriteLine($"Child {i}: {wins[i].Item1} wins");
+            Console.WriteLine($"Child {i}: {wins[i]} wins");
         }
         Console.WriteLine("------------------------------------------------------");
 
+        List<(int, int)> newWins = new();
 
-        wins.Sort();
-        wins.Reverse();
+        for (int i = 0; i < noOfChildren; i++)
+        {
+            newWins.Add((wins[i], i));
+        }
+
+        newWins.Sort();
+        newWins.Reverse();
+
+        int noOfWorst = (int)(0.2 * generationSize);
+        List<GameParams> best = new();
 
         scores.Clear();
-        int numberOfWorst = 1;
-        List<GameParams> best = new();
-        for (int i = 0; i + numberOfWorst < numberOfChildren; i++)
+
+        for (int i = 0; i + noOfWorst < generationSize; i++)
         {
-            best.Add(children[wins[i].Item2]);
-            scores.Add(wins[i].Item1);
+            best.Add(children[newWins[i].Item2]);
+            scores.Add(newWins[i].Item1);
         }
 
         wins.Reverse();
-        for (int i = 0; i < numberOfWorst; i++)
+        for (int i = 0; i < noOfWorst; i++)
         {
-            best.Add(children[wins[i].Item2].Mutate(20, 0.05));
-            scores.Add(wins[i].Item1);
+            best.Add(children[newWins[i].Item2].Mutate(0.8, 0.3));
+            scores.Add(newWins[i].Item1);
         }
 
         return best;
     }
-
     public void NextGeneration()
     {
         List<GameParams> children = new();
-        // children.AddRange(currentGeneration);
 
-        for (int i = 0; i < 20; i++)
+        foreach (var parent in currentGeneration)
+        {
+            children.Add(parent.Mutate(0.3, 0.1));
+        }
+
+        while (children.Count < noOfChildren)
         {
             int a = rnd.Next(0, currentGeneration.Count - 1);
             int b = rnd.Next(0, currentGeneration.Count - 1);
@@ -178,18 +132,9 @@ public class Generation
             children.Add(child.Mutate(0.3, 0.1));
         }
 
-        // for (int i = 0; i < currentGeneration.Count; i++)
-        // {
-        //     for (int j = i + 1; j < currentGeneration.Count; j++)
-        //     {
-        //         GameParams child = GameParams.Combine(currentGeneration[i], currentGeneration[j]);
-        //         children.Add(child.Mutate(3, 0.05));
-        //     }
-        // }
-
         children = SelectChildren(children);
 
-        currentGenerationNumber++;
+        noOfGeneration += 1;
         currentGeneration = children;
     }
 

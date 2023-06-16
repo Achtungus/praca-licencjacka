@@ -5,14 +5,11 @@ using ScriptsOfTribute.Serializers;
 using System.Diagnostics;
 using ScriptsOfTribute.Board.CardAction;
 using ScriptsOfTribute.Board.Cards;
-using System;
-using System.Collections;
 
 namespace Bots;
 
 public class MCTSNode
 {
-    // List to array
     public List<(MCTSNode?, Move)> children = new();
     public SeededGameState gameState;
     public double score = 0;
@@ -37,23 +34,16 @@ public class MCTSNode
         }
     }
 
-    public static double UCBScore(MCTSNode? child, int parentSimulations)
+    public static double UCBScore(MCTSNode? child, double parentSimulationsLog)
     {
         // Maybe pass log already, jeśli lewe to nieprawda, to prawe tez
-        if (child is null || child.visits == 0)
-        {
-            return double.MaxValue;
-        }
-        if (child.full)
-        {
-            return double.MinValue;
-        }
-        return child.score + 1.41 * Math.Sqrt((Math.Log(parentSimulations)) / child.visits);
+        if (child is null || child.visits == 0) return double.MaxValue;
+        if (child.full) return double.MinValue;
+        return child.score + 1.41 * Math.Sqrt(parentSimulationsLog / (double)child.visits);
     }
 
     public int SelectBestChildIndex()
     {
-        // TODO: Ew. losować z najlepszych / premiować częstość odwiedzania
         int bestChildIndex = 0;
         double bestScore = double.MinValue;
 
@@ -62,10 +52,7 @@ public class MCTSNode
         {
             index += 1;
 
-            if (child is null)
-            {
-                continue;
-            }
+            if (child is null) continue;
 
             if (child.score > bestScore)
             {
@@ -120,18 +107,16 @@ public class BestMCTS : AI
 
     public BestMCTS() { }
 
-    public class PairOnlySecond : IComparer<(Move, double)> // czy w dobra strone sortuje? ma byc rosnaco
+    public class PairOnlySecond : Comparer<(Move, double)>
     {
-        public int Compare((Move, double) a, (Move, double) b)
+        public override int Compare((Move, double) a, (Move, double) b)
         {
-            if (a.Item2 < b.Item2) return -1;
-            if (a.Item2 > b.Item2) return 1;
-            return 0;
+            return a.Item2.CompareTo(b.Item2);
         }
     }
+
     List<Move>? getInstantMoves(List<Move> moves, SeededGameState gameState)
     {
-        return null;
         if (moves.Count == 1) return null;
         if (gameState.BoardState == BoardState.CHOICE_PENDING)
         {
@@ -255,9 +240,10 @@ public class BestMCTS : AI
         int selectedChild = 0;
 
         int index = 0;
+        double logVisited = Math.Log(node.visits);
         foreach (var (child, move) in node.children)
         {
-            double score = MCTSNode.UCBScore(child, node.visits);
+            double score = MCTSNode.UCBScore(child, logVisited);
             if (score > maxScore)
             {
                 maxScore = score;
@@ -451,7 +437,6 @@ public class BestMCTS : AI
 
         if (startOfTurn || !CheckIfSameGameStateAfterOneMove(root!, gameState))
         {
-            // Console.WriteLine("Nowe drzewo");
             SeededGameState seededGameState = gameState.ToSeededGameState(seed);
             List<Move>? instantMoves = getInstantMoves(possibleMoves, seededGameState);
             if (instantMoves is null)
