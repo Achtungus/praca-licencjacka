@@ -20,7 +20,7 @@ public class GameStrategy
         { Param.CardLimit,     new double[] { 20, 17, 17 } }, // do zbadania
         { Param.ComboPower,    new double[] { 3, 3, 3 } },
         { Param.OurAgent,      new double[] { 5, 5, 5 } }, // niezauwazalne
-        { Param.EnemyAgent,    new double[] { -60, -80, -150 } },
+        { Param.EnemyAgent,    new double[] { -40, -80, -150 } },
         { Param.OverCardLimitPenalty, new double[] { 805, 805, 805 } },
         { Param.UpcomingCard,  new double[] { 15, 25, 100 } },
         { Param.TierMultiplier, new double[] {10, 10, 10}},
@@ -245,6 +245,39 @@ public class GameStrategy
             }
         }
 
+        foreach (SerializedAgent agent in gameState.CurrentPlayer.Agents)
+        {
+            if (agent.RepresentingCard.Type != CardType.CONTRACT_AGENT)
+            {
+                value += GPCardTierList.GetCardTier((int)agent.RepresentingCard.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
+                if (ourCombos.ContainsKey(agent.RepresentingCard.Deck))
+                {
+                    ourCombos[agent.RepresentingCard.Deck] += 1;
+                }
+                else
+                {
+                    ourCombos[agent.RepresentingCard.Deck] = 1;
+                }
+            }
+            value += agent.CurrentHp * GetWeight(Param.OurPrestige) + GetWeight(Param.OurAgent);
+        }
+
+        foreach (SerializedAgent agent in gameState.EnemyPlayer.Agents)
+        {
+            if (agent.RepresentingCard.Type != CardType.CONTRACT_AGENT)
+            {
+                value -= GPCardTierList.GetCardTier((int)agent.RepresentingCard.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
+                if (enemyCombos.ContainsKey(agent.RepresentingCard.Deck))
+                {
+                    enemyCombos[agent.RepresentingCard.Deck] += 1;
+                }
+                else
+                {
+                    enemyCombos[agent.RepresentingCard.Deck] = 1;
+                }
+            }
+            value += AgentTier.GetCardTier(agent.RepresentingCard.CommonId) * GetWeight(Param.EnemyAgent); // moze cos jeszcze zwiazanego z hp
+        }
 
         value += CombosValue(ourCombos) - CombosValue(enemyCombos);
         foreach (UniqueCard card in gameState.CurrentPlayer.KnownUpcomingDraws)
@@ -263,17 +296,8 @@ public class GameStrategy
                 value -= ourCombos[card.Deck] * GetWeight(Param.KnowingCardCombo);
             }
         }
-
-        foreach (SerializedAgent agent in gameState.CurrentPlayer.Agents)
-        {
-            value += agent.CurrentHp * GetWeight(Param.OurPrestige) + GetWeight(Param.OurAgent);
-        }
-
-        foreach (SerializedAgent agent in gameState.EnemyPlayer.Agents)
-        {
-            value += AgentTier.GetCardTier(agent.RepresentingCard.CommonId) * GetWeight(Param.EnemyAgent) - agent.CurrentHp;
-        }
         return value;
+
     }
 
     public double Heuristic(SeededGameState gameState)

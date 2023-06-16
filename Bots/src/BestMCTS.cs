@@ -382,7 +382,6 @@ public class BestMCTS : AI
         {
             var spm1 = mv1 as SimplePatronMove;
             var spm2 = mv2 as SimplePatronMove;
-            Debug.Assert(spm1 is not null && spm2 is not null);
             return (spm1!.PatronId == spm2!.PatronId);
         }
         if (mv1.Command == CommandEnum.MAKE_CHOICE)
@@ -393,7 +392,6 @@ public class BestMCTS : AI
             {
                 var mcm21 = mv1 as MakeChoiceMove<UniqueEffect>;
                 var mcm22 = mv2 as MakeChoiceMove<UniqueEffect>;
-                Debug.Assert(mcm21 is not null && mcm22 is not null);
                 return CheckIfSameEffects(mcm21!.Choices, mcm22!.Choices);
             }
             else if (mcm1 is not null && mcm2 is not null)
@@ -404,7 +402,6 @@ public class BestMCTS : AI
         }
         var scm1 = mv1 as SimpleCardMove;
         var scm2 = mv2 as SimpleCardMove;
-        Debug.Assert(scm1 is not null && scm2 is not null);
         return (scm1!.Card.CommonId == scm2!.Card.CommonId);
     }
     public override PatronId SelectPatron(List<PatronId> availablePatrons, int round)
@@ -466,7 +463,7 @@ public class BestMCTS : AI
         {
             int actionCounter = 0;
             totCreated = 0;
-            for (int runs = 0; runs < 250 && !root!.full; runs++)
+            for (int runs = 0; runs < 500 && !root!.full; runs++)
             {
                 run(root!, rng);
                 actionCounter++;
