@@ -27,7 +27,7 @@ public class GameStrategy
         { Param.After40Bonus, new double [] {300, 300, 300}},
     };
 
-    static private int stalaCoriolisa = 300;
+    static private int stalaCoriolisa = 200;
     static private List<int> comboBonus = new List<int>() { 1, 20, 100, 211, 540 };
     const int heuristicMin = -10000;
     const int heuristicMax = 10000;
@@ -299,25 +299,6 @@ public class GameStrategy
         return ((double)Math.Clamp(val + heuristicMax, 0.0, 2.0 * heuristicMax) / (2.0 * heuristicMax));
     }
 
-    // double CombosValue(Dictionary<PatronId, int> dict)
-    // {
-    //     double val = 0;
-    //     int cnt = 0;
-    //     foreach (KeyValuePair<PatronId, int> el in dict)
-    //     {
-    //         cnt += el.Value;
-    //     }
-    //     double wsp = 1;
-    //     if (cnt > GetWeight(Param.CardLimit))
-    //     {
-    //         wsp = GetWeight(Param.CardLimit) / cnt;
-    //     }
-    //     foreach (KeyValuePair<PatronId, int> el in dict)
-    //     {
-    //         val += comboBonus[Math.Min(comboBonus.Count-1, el.Value)] + Math.Max(0, (el.Value - comboBonus.Count)*stalaCoriolisa); // moze dodac wspolczynnik
-    //     }
-    //     return val*wsp;
-    // }
     double CombosValue(Dictionary<PatronId, int> dict)
     {
         double val = 0;
@@ -333,10 +314,61 @@ public class GameStrategy
         }
         foreach (KeyValuePair<PatronId, int> el in dict)
         {
-            val += Math.Pow(wsp * el.Value, GetWeight(Param.ComboPower));
+            val += comboBonus[Math.Min(comboBonus.Count - 1, el.Value)] + Math.Max(0, (el.Value - comboBonus.Count) * stalaCoriolisa); // moze dodac wspolczynnik
+        }
+        return val * wsp;
+    }
+    // double CombosValue(Dictionary<PatronId, int> dict)
+    // {
+    //     double val = 0;
+    //     int cnt = 0;
+    //     foreach (KeyValuePair<PatronId, int> el in dict)
+    //     {
+    //         cnt += el.Value;
+    //     }
+    //     double wsp = 1;
+    //     if (cnt > GetWeight(Param.CardLimit))
+    //     {
+    //         wsp = GetWeight(Param.CardLimit) / cnt;
+    //     }
+    //     foreach (KeyValuePair<PatronId, int> el in dict)
+    //     {
+    //         val += Math.Pow(wsp * el.Value, GetWeight(Param.ComboPower));
+    //     }
+    //     return val;
+    public double CardEvaluation(UniqueCard card, SeededGameState gameState)
+    {
+        double val = GPCardTierList.GetCardTier(card.Name, currentGamePhase);
+
+        var ourCombos = new Dictionary<PatronId, int>();
+        ourCombos[card.Deck] = 0;
+        foreach (UniqueCard c in gameState.CurrentPlayer.DrawPile)
+        {
+            if (c.Deck == card.Deck) ourCombos[c.Deck] += 1;
+        }
+        foreach (UniqueCard c in gameState.CurrentPlayer.Hand)
+        {
+            if (c.Deck == card.Deck) ourCombos[c.Deck] += 1;
+        }
+        foreach (UniqueCard c in gameState.CurrentPlayer.Played)
+        {
+            if (c.Deck == card.Deck) ourCombos[c.Deck] += 1;
+        }
+        foreach (UniqueCard c in gameState.CurrentPlayer.CooldownPile)
+        {
+            if (c.Deck == card.Deck) ourCombos[c.Deck] += 1;
+        }
+
+        val += CombosValue(ourCombos);
+        if (ourCombos[card.Deck] > 1)
+        {
+            ourCombos[card.Deck] -= 1;
+            val -= CombosValue(ourCombos);
         }
         return val;
     }
+    // }
+
 }
 
 public enum GamePhase
