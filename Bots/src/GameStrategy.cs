@@ -245,6 +245,39 @@ public class GameStrategy
             }
         }
 
+        foreach (SerializedAgent agent in gameState.CurrentPlayer.Agents)
+        {
+            if (agent.RepresentingCard.Type != CardType.CONTRACT_AGENT)
+            {
+                value += GPCardTierList.GetCardTier((int)agent.RepresentingCard.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
+                if (ourCombos.ContainsKey(agent.RepresentingCard.Deck))
+                {
+                    ourCombos[agent.RepresentingCard.Deck] += 1;
+                }
+                else
+                {
+                    ourCombos[agent.RepresentingCard.Deck] = 1;
+                }
+            }
+            value += agent.CurrentHp * GetWeight(Param.OurPrestige) + GetWeight(Param.OurAgent);
+        }
+
+        foreach (SerializedAgent agent in gameState.EnemyPlayer.Agents)
+        {
+            if (agent.RepresentingCard.Type != CardType.CONTRACT_AGENT)
+            {
+                value -= GPCardTierList.GetCardTier((int)agent.RepresentingCard.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
+                if (enemyCombos.ContainsKey(agent.RepresentingCard.Deck))
+                {
+                    enemyCombos[agent.RepresentingCard.Deck] += 1;
+                }
+                else
+                {
+                    enemyCombos[agent.RepresentingCard.Deck] = 1;
+                }
+            }
+            value += AgentTier.GetCardTier(agent.RepresentingCard.CommonId) * GetWeight(Param.EnemyAgent); // moze cos jeszcze zwiazanego z hp
+        }
 
         value += CombosValue(ourCombos) - CombosValue(enemyCombos);
         foreach (UniqueCard card in gameState.CurrentPlayer.KnownUpcomingDraws)
@@ -263,19 +296,8 @@ public class GameStrategy
                 value -= ourCombos[card.Deck] * GetWeight(Param.KnowingCardCombo);
             }
         }
-
-        foreach (SerializedAgent agent in gameState.CurrentPlayer.Agents)
-        {
-            value += GPCardTierList.GetCardTier((int)agent.RepresentingCard.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
-            value += agent.CurrentHp * GetWeight(Param.OurPrestige) + GetWeight(Param.OurAgent);
-        }
-
-        foreach (SerializedAgent agent in gameState.EnemyPlayer.Agents)
-        {
-            value -= GPCardTierList.GetCardTier((int)agent.RepresentingCard.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
-            value += AgentTier.GetCardTier(agent.RepresentingCard.CommonId) * GetWeight(Param.EnemyAgent); // moze cos jeszcze zwiazanego z hp
-        }
         return value;
+
     }
 
     public double Heuristic(SeededGameState gameState)
