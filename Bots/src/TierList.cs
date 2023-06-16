@@ -1,3 +1,5 @@
+using ScriptsOfTribute;
+
 namespace Bots;
 
 // public static class GPCardTierList
@@ -251,3 +253,116 @@ public static class GPCardTierList
     };
     public static int GetCardTier(int cardId, GamePhase gamePhase) => cardTierDict[cardId][(int)gamePhase];
 }
+
+
+// public static class GPCardTierListX
+// {
+//     const int S = 50;
+//     const int A = 30;
+//     const int B = 15;
+//     const int WOC = 10;
+//     const int C = 3;
+//     const int D = 1;
+//     const int UNKNOWN = 0;
+//     const int CONTRACT_ACTION = 0;
+//     const int CURSE = -3;
+
+//     static readonly Dictionary<CardId, int[]> cardTierDict = new Dictionary<CardId, int[]> {
+//         { CardId.CURRENCY_EXCHANGE, new int[] { S, S, A } },
+//         { CardId.LUXURY_EXPORTS,    new int[] { S, S, C } },
+//         { CardId.OATHMAN,           new int[] { A, A, B } },
+//         { CardId.EBONY_MINE,        new int[] { C, B, C } },
+//         { CardId.HLAALU_COUNCILOR,  new int[] { A, A, C } },
+//         { CardId.HLAALU_KINSMAN,    new int[] { A, A, C } },
+//         { CardId.HOUSE_EMBASSY,     new int[] { A, A, C } },
+//         { CardId.HOUSE_MARKETPLACE, new int[] { B, A, C } },
+//         { CardId.HIRELING,          new int[] { C, C, D } },
+//         { CardId.HOSTILE_TAKEOVER,  new int[] { B, C, D } },
+//         { CardId.KWAMA_EGG_MINE,    new int[] { C, B, C } },
+//         { CardId.CUSTOMS_SEIZURE,   new int[] { D, D, D } },
+//         { CardId.GOODS_SHIPMENT,    new int[] { D, D, D } },
+
+//         { CardId.MIDNIGHT_RAID,     new int[] { S, S, S } },
+//         { CardId.BLOOD_SACRIFICE,   new int[] { S, S, S } },
+//         { CardId.BLOODY_OFFERING,   new int[] { S, S, S } },
+//         { CardId.BONFIRE,           new int[] { C, B, C } },
+//         { CardId.BRIARHEART_RITUAL, new int[] { C, B, C } },
+//         { CardId.CLANWITCH,         new int[] { C, B, D } },
+//         { CardId.ELDER_WITCH,       new int[] { C, B, D } },
+//         { CardId.HAGRAVEN,          new int[] { D, B, D } },
+//         { CardId.HAGRAVEN_MATRON,   new int[] { D, A, C } },
+//         { CardId.IMPERIAL_PLUNDER,  new int[] { B, A, B } },
+//         { CardId.IMPERIAL_SPOILS,   new int[] { B, A, B } },
+//         { CardId.KARTH_MANHUNTER,   new int[] { C, B, C } },
+//         { CardId.WAR_SONG,          new int[] { D, D, D } },
+
+//         { CardId.BLACKFEATHER_KNAVE,     new int[] { S, S, A } },
+//         { CardId.PLUNDER,                new int[] { S, S, S } },
+//         { CardId.TOLL_OF_FLESH,          new int[] { S, S, A } },
+//         { CardId.TOLL_OF_SILVER,         new int[] { S, S, A } },
+//         { CardId.MURDER_OF_CROWS,        new int[] { S, S, A } },
+//         { CardId.PILFER,                 new int[] { A, S, A } },
+//         { CardId.SQUAWKING_ORATORY,      new int[] { A, S, A } },
+//         { CardId.LAW_OF_SOVEREIGN_ROOST, new int[] { B, A, B } },
+//         { CardId.POOL_OF_SHADOW,         new int[] { B, A, B } },
+//         { CardId.SCRATCH,                new int[] { A, A, B } },
+//         { CardId.BLACKFEATHER_BRIGAND,   new int[] { C, C, C } },
+//         { CardId.BLACKFEATHER_KNIGHT,    new int[] { B, B, C } },
+//         { CardId.PECK,                   new int[] { C, C, C } },
+
+//         { CardId.CONQUEST,          new int[] { A, A, B } },
+//         { CardId.GRAND_ORATORY,     new int[] { B, S, S } },
+//         { CardId.HIRAS_END,         new int[] { S, S, S } },
+//         { CardId.HEL_SHIRA_HERALD,  new int[] { B, A, B } },
+//         { CardId.MARCH_ON_HATTU,    new int[] { A, A, A } },
+//         { CardId.SHEHAI_SUMMONING,  new int[] { B, B, B } },
+//         { CardId.WARRIOR_WAVE,      new int[] { S, A, B } },
+//         { CardId.ANSEI_ASSAULT,     new int[] { B, A, B } },
+//         { CardId.ANSEIS_VICTORY,    new int[] { B, A, B } },
+//         { CardId.BATTLE_MEDITATION, new int[] { C, B, B } },
+//         { CardId.NO_SHIRA_POET,     new int[] { C, C, C } },
+//         { CardId.WAY_OF_THE_SWORD,  new int[] { D, D, D } },
+
+//         { CardId.RALLY,                  new int[] { A, S, A } },
+//         { CardId.SIEGE_WEAPON_VOLLEY,    new int[] { A, S, B } },
+//         { CardId.THE_ARMORY,             new int[] { A, S, A } },
+//         { CardId.BANNERET,               new int[] { A, S, A } },
+//         { CardId.KNIGHT_COMMANDER,       new int[] { S, S, A } },
+//         { CardId.REINFORCEMENTS,         new int[] { S, A, B } },
+//         { CardId.ARCHERS_VOLLEY,         new int[] { B, A, B } },
+//         { CardId.LEGIONS_ARRIVAL,        new int[] { A, A, B } },
+//         { CardId.SHIELD_BEARER,          new int[] { C, B, B } },
+//         { CardId.BANGKORAI_SENTRIES,     new int[] { C, B, C } },
+//         { CardId.KNIGHTS_OF_SAINT_PELIN, new int[] { C, A, C } },
+//         { CardId.THE_PORTCULLIS,         new int[] { C, C, D } },
+//         { CardId.FORTIFY,                new int[] { D, D, D } },
+
+//         { CardId.BAG_OF_TRICKS,     new int[] { C, B, B } },
+//         { CardId.BEWILDERMENT,      new int[] { CURSE, CURSE, CURSE } },
+//         { CardId.GRAND_LARCENY,     new int[] { A, A, B } },
+//         { CardId.JARRING_LULLABY,   new int[] { B, A, B } },
+//         { CardId.JEERING_SHADOW,    new int[] { C, C, C } },
+//         { CardId.MOONLIT_ILLUSION,  new int[] { B, A, B } },
+//         { CardId.POUNCE_AND_PROFIT, new int[] { S, S, B } },
+//         { CardId.PROWLING_SHADOW,   new int[] { B, C, C } },
+//         { CardId.RINGS_GUILE,       new int[] { C, C, C } },
+//         { CardId.SHADOWS_SLUMBER,   new int[] { A, A, B } },
+//         { CardId.SLIGHT_OF_HAND,    new int[] { A, B, D } },
+//         { CardId.STUBBORN_SHADOW,   new int[] { D, C, D } },
+//         { CardId.TWILIGHT_REVELRY,  new int[] { B, A, B } },
+//         { CardId.SWIPE,             new int[] { D, D, D } },
+
+//         { CardId.AMBUSH,          new [] { CONTRACT_ACTION, CONTRACT_ACTION, CONTRACT_ACTION } },
+//         { CardId.BARTERER,        new [] { CONTRACT_ACTION, CONTRACT_ACTION, CONTRACT_ACTION } },
+//         { CardId.BLACK_SACRAMENT, new [] { CONTRACT_ACTION, CONTRACT_ACTION, CONTRACT_ACTION } },
+//         { CardId.BLACKMAIL,       new [] { CONTRACT_ACTION, CONTRACT_ACTION, CONTRACT_ACTION } },
+//         { CardId.GOLD,            new [] { UNKNOWN, CURSE, CURSE } },
+//         { CardId.HARVEST_SEASON,  new [] { CONTRACT_ACTION, CONTRACT_ACTION, CONTRACT_ACTION } },
+//         { CardId.IMPRISONMENT,    new [] { CONTRACT_ACTION, CONTRACT_ACTION, CONTRACT_ACTION } },
+//         { CardId.RAGPICKER,       new [] { CONTRACT_ACTION, CONTRACT_ACTION, CONTRACT_ACTION } },
+//         { CardId.TITHE,           new [] { CONTRACT_ACTION, CONTRACT_ACTION, CONTRACT_ACTION } },
+//         { CardId.WRIT_OF_COIN,    new [] { WOC, B, UNKNOWN } },
+//     };
+
+//     public static int GetCardTier(CardId id, GamePhase gamePhase) => cardTierDict[id][(int)gamePhase];
+// }

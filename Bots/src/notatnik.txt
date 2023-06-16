@@ -1,2 +1,0 @@
-Czy refresh zwraca uwage na kolejnosc
-isIspmorphic kolejnosc kart w CHOICE
