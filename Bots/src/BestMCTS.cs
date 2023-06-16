@@ -131,7 +131,6 @@ public class BestMCTS : AI
     }
     List<Move>? getInstantMoves(List<Move> moves, SeededGameState gameState)
     {
-        return null;
         if (moves.Count == 1) return null;
         if (gameState.BoardState == BoardState.CHOICE_PENDING)
         {
@@ -144,8 +143,8 @@ public class BestMCTS : AI
                     {
                         var mcm = mv as MakeChoiceMove<UniqueCard>;
                         UniqueCard card = mcm!.Choices[0];
-                        if (card.Name == "Bewilderment") return new List<Move> { mv };
-                        if (card.Name == "Gold" && Gold.Count == 0) Gold.Add(mv);
+                        if (card.CommonId == CardId.BEWILDERMENT) return new List<Move> { mv };
+                        if (card.CommonId == CardId.BEWILDERMENT && Gold.Count == 0) Gold.Add(mv);
                         if (card.Cost == 0) toReturn.Add(mv); // moze tez byc card.Type == 'Starter'
                     }
                     if (Gold.Count == 1) return Gold;
@@ -160,11 +159,11 @@ public class BestMCTS : AI
                         choices.Add((mv, strategy.CardEvaluation(mcm!.Choices[0], gameState)));
                     }
                     choices.Sort(new PairOnlySecond());
-                    List<string> cards = new();
+                    List<CardId> cards = new();
                     for (int i = 0; i < Math.Min(3, choices.Count); i++)
                     {
                         var mcm = choices[i].Item1 as MakeChoiceMove<UniqueCard>;
-                        cards.Add(mcm!.Choices[0].Name);
+                        cards.Add(mcm!.Choices[0].CommonId);
                     }
                     foreach (Move mv in moves)
                     {
@@ -172,7 +171,7 @@ public class BestMCTS : AI
                         bool flag = true;
                         foreach (UniqueCard card in mcm!.Choices)
                         {
-                            if (!cards.Contains(card.Name))
+                            if (!cards.Contains(card.CommonId))
                             {
                                 flag = false;
                                 break;
@@ -232,7 +231,7 @@ public class BestMCTS : AI
             if (mv.Command == CommandEnum.PLAY_CARD)
             {
                 var mvCopy = mv as SimpleCardMove;
-                if (InstantPlayCards.IsInstantPlay(mvCopy!.Card.Name))
+                if (InstantPlayCards.IsInstantPlay(mvCopy!.Card.CommonId))
                 {
                     return new List<Move> { mv };
                 }
@@ -319,30 +318,30 @@ public class BestMCTS : AI
 
     private bool CheckIfSameCards(List<UniqueCard> l, List<UniqueCard> r)
     {
-        var balance = new Dictionary<string, int>();
+        var balance = new Dictionary<CardId, int>();
         foreach (UniqueCard card in l)
         {
-            if (balance.ContainsKey(card.Name))
+            if (balance.ContainsKey(card.CommonId))
             {
-                balance[card.Name] += 1;
+                balance[card.CommonId] += 1;
             }
             else
             {
-                balance[card.Name] = 1;
+                balance[card.CommonId] = 1;
             }
         }
         foreach (UniqueCard card in r)
         {
-            if (balance.ContainsKey(card.Name))
+            if (balance.ContainsKey(card.CommonId))
             {
-                balance[card.Name] -= 1;
+                balance[card.CommonId] -= 1;
             }
             else
             {
                 return false;
             }
         }
-        foreach (KeyValuePair<string, int> el in balance)
+        foreach (KeyValuePair<CardId, int> el in balance)
         {
             if (el.Value != 0) return false;
         }
@@ -359,30 +358,30 @@ public class BestMCTS : AI
 
     private bool CheckIfSameEffects(List<UniqueEffect> e1, List<UniqueEffect> e2)
     {
-        var balance = new Dictionary<(string, EffectType, int, int), int>();
+        var balance = new Dictionary<(CardId, EffectType, int, int), int>();
         foreach (UniqueEffect ef in e1)
         {
-            if (balance.ContainsKey((ef.ParentCard.Name, ef.Type, ef.Amount, ef.Combo)))
+            if (balance.ContainsKey((ef.ParentCard.CommonId, ef.Type, ef.Amount, ef.Combo)))
             {
-                balance[(ef.ParentCard.Name, ef.Type, ef.Amount, ef.Combo)] += 1;
+                balance[(ef.ParentCard.CommonId, ef.Type, ef.Amount, ef.Combo)] += 1;
             }
             else
             {
-                balance[(ef.ParentCard.Name, ef.Type, ef.Amount, ef.Combo)] = 1;
+                balance[(ef.ParentCard.CommonId, ef.Type, ef.Amount, ef.Combo)] = 1;
             }
         }
         foreach (UniqueEffect ef in e2)
         {
-            if (balance.ContainsKey((ef.ParentCard.Name, ef.Type, ef.Amount, ef.Combo)))
+            if (balance.ContainsKey((ef.ParentCard.CommonId, ef.Type, ef.Amount, ef.Combo)))
             {
-                balance[(ef.ParentCard.Name, ef.Type, ef.Amount, ef.Combo)] -= 1;
+                balance[(ef.ParentCard.CommonId, ef.Type, ef.Amount, ef.Combo)] -= 1;
             }
             else
             {
                 return false;
             }
         }
-        foreach (KeyValuePair<(string, EffectType, int, int), int> el in balance)
+        foreach (KeyValuePair<(CardId, EffectType, int, int), int> el in balance)
         {
             if (el.Value != 0) return false;
         }
@@ -419,7 +418,7 @@ public class BestMCTS : AI
         var scm1 = mv1 as SimpleCardMove;
         var scm2 = mv2 as SimpleCardMove;
         Debug.Assert(scm1 is not null && scm2 is not null);
-        return (scm1!.Card.Name == scm2!.Card.Name);
+        return (scm1!.Card.CommonId == scm2!.Card.CommonId);
     }
     public override PatronId SelectPatron(List<PatronId> availablePatrons, int round)
     {

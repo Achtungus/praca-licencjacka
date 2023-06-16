@@ -1,25 +1,27 @@
+using ScriptsOfTribute;
+
 namespace Bots;
 
 public static class InstantPlayCards
 {
-    static readonly HashSet<string> instantPlayCards = new HashSet<string> {
+    static readonly HashSet<CardId> instantPlayCards = new HashSet<CardId> {
         // HLAALU
         // "Currency Exchange",
-        "Luxury Exports",
+        CardId.LUXURY_EXPORTS,
         // "Oathman",
-        "Ebony Mine",
+        CardId.EBONY_MINE,
         // "Hlaalu Councilor",
         // "Hlaalu Kinsman",
         // "House Embassy",
         // "House Marketplace",
         // "Hireling",
         // "Hostile Takeover",
-        "Kwama Egg Mine",
+        CardId.KWAMA_EGG_MINE,
         // "Customs Seizure",
-        "Goods Shipment",
+        CardId.GOODS_SHIPMENT,
 
         // RED EAGLE
-        "Midnight Raid",
+        CardId.MIDNIGHT_RAID,
         // "Blood Sacrifice",
         // "Bloody Offering",
         // "Bonfire",
@@ -31,7 +33,7 @@ public static class InstantPlayCards
         // "Imperial Plunder",
         // "Imperial Spoils",
         // "Karth Man-Hunter",
-        "War Song",
+        CardId.WAR_SONG,
 
         // DUKE OF CROWS
         // "Blackfeather Knave",
@@ -64,48 +66,48 @@ public static class InstantPlayCards
 
         // PELIN
         // "Rally",
-        "Siege Weapon Volley",
-        "The Armory",
-        "Banneret",
-        "Knight Commander",
-        "Reinforcements",
-        "Archers' Volley",
-        "Legion's Arrival",
-        "Shield Bearer",
-        "Bangkorai Sentries",
-        "Knights of Saint Pelin",
-        "The Portcullis",
-        "Fortify",
+        CardId.SIEGE_WEAPON_VOLLEY,
+        CardId.THE_ARMORY,
+        CardId.BANNERET,
+        CardId.KNIGHT_COMMANDER,
+        CardId.REINFORCEMENTS,
+        CardId.ARCHERS_VOLLEY,
+        CardId.LEGIONS_ARRIVAL,
+        CardId.SHIELD_BEARER,
+        CardId.BANGKORAI_SENTRIES,
+        CardId.KNIGHTS_OF_SAINT_PELIN,
+        CardId.THE_PORTCULLIS,
+        CardId.FORTIFY,
 
         // RAJHIN
         // "Bag of Tricks", <- contract action
-        "Bewilderment",
-        "Grand Larceny",
-        "Jarring Lullaby",
-        "Jeering Shadow",
+        CardId.BEWILDERMENT,
+        CardId.GRAND_LARCENY,
+        CardId.JARRING_LULLABY,
+        CardId.JEERING_SHADOW,
         // "Moonlit Illusion", <- contract action
-        "Pounce and Profit",
-        "Prowling Shadow",
+        CardId.POUNCE_AND_PROFIT,
+        CardId.PROWLING_SHADOW,
         // "Ring's Guile", <- contract action
-        "Shadow's Slumber",
+        CardId.SHADOWS_SLUMBER,
         // "Slight of Hand",
-        "Stubborn Shadow",
+        CardId.STUBBORN_SHADOW,
         // "Twilight Revelry",
-        "Swipe",
+        CardId.SWIPE,
 
         // TREASURY
         // "Ambush", <- contract action
         // "Barterer", <- contract action
         // "Black Sacrament", <- contract action
         // "Blackmail", <- contract action
-        "Gold",
+        CardId.GOLD,
         // "Harvest Season", <- contract action
         // "Imprisonment", <- contract action
         // "Ragpicker", <- contract action
         // "Tithe", <- contract action
-        "Writ of Coin",
+        CardId.WRIT_OF_COIN,
         // "Unknown", <- ?
     };
 
-    public static bool IsInstantPlay(string cardName) => instantPlayCards.Contains(cardName);
+    public static bool IsInstantPlay(CardId id) => instantPlayCards.Contains(id);
 }
