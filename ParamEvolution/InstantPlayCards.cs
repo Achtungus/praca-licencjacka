@@ -1,4 +1,4 @@
-namespace Bots;
+namespace ParamEvolution;
 
 public static class InstantPlayCards
 {
@@ -107,5 +107,8 @@ public static class InstantPlayCards
         // "Unknown", <- ?
     };
 
-    public static bool IsInstantPlay(string cardName) => instantPlayCards.Contains(cardName);
+    public static bool IsInstantPlay(string cardName)
+    {
+        return instantPlayCards.Contains(cardName);
+    }
 }

@@ -6,25 +6,12 @@ using System.Diagnostics;
 using ScriptsOfTribute.Board.CardAction;
 using ScriptsOfTribute.Board.Cards;
 
-namespace Bots;
+namespace ParamEvolution;
 
 public class GameStrategy
 {
     static readonly HashSet<string> taunts = new HashSet<string> {
         "Stubborn Shadow", "Banneret", "Knight Commander", "Shield Bearer", "Bangkorai Sentries", "Knights of Saint Pelin"
-    };
-    static readonly Dictionary<Param, double[]> weight = new Dictionary<Param, double[]> {
-        { Param.OurPrestige,   new double[] { 10, 60, 200 } },
-        { Param.EnemyPrestige, new double[] { -10, -60, -200 } },
-        { Param.CardLimit,     new double[] { 20, 17, 17 } }, // do zbadania
-        { Param.ComboPower,    new double[] { 3, 3, 3 } },
-        { Param.OurAgent,      new double[] { 5, 5, 5 } }, // niezauwazalne
-        { Param.EnemyAgent,    new double[] { -60, -80, -150 } },
-        { Param.OverCardLimitPenalty, new double[] { 805, 805, 805 } },
-        { Param.UpcomingCard,  new double[] { 15, 25, 100 } },
-        { Param.TierMultiplier, new double[] {10, 10, 10}},
-        { Param.KnowingCardCombo, new double [] {1, 1, 1}}, //epsilon
-        { Param.After40Bonus, new double [] {300, 300, 300}},
     };
 
     static private int stalaCoriolisa = 200;
@@ -33,13 +20,15 @@ public class GameStrategy
     const int heuristicMax = 10000;
     readonly int cardCount;
     readonly GamePhase currentGamePhase;
+    readonly GameParams gameParams;
 
-    public GameStrategy(int cardCount, GamePhase currentGamePhase)
+    public GameStrategy(int cardCount, GamePhase currentGamePhase, GameParams gameParams)
     {
         this.cardCount = cardCount;
         this.currentGamePhase = currentGamePhase;
+        this.gameParams = gameParams;
     }
-    double GetWeight(Param param) => weight[param][(int)currentGamePhase];
+    double GetWeight(Param param) => gameParams.GetParamValue(param, currentGamePhase);
     bool IsTaunt(string agentName) => taunts.Contains(agentName);
 
     double BasicProperties(SeededGameState gameState)
@@ -248,7 +237,7 @@ public class GameStrategy
         value += CombosValue(ourCombos) - CombosValue(enemyCombos);
         foreach (UniqueCard card in gameState.CurrentPlayer.KnownUpcomingDraws)
         {
-            value += HandTierList.GetCardTier(card.Name) * GetWeight(Param.UpcomingCard);
+            value += (int)HandTierList.GetCardTier(card.Name) * GetWeight(Param.UpcomingCard);
             if (ourCombos.ContainsKey(card.Deck))
             {
                 value += ourCombos[card.Deck] * GetWeight(Param.KnowingCardCombo);
@@ -256,7 +245,7 @@ public class GameStrategy
         }
         foreach (UniqueCard card in gameState.EnemyPlayer.KnownUpcomingDraws)
         {
-            value -= HandTierList.GetCardTier(card.Name) * GetWeight(Param.UpcomingCard);
+            value -= (int)HandTierList.GetCardTier(card.Name) * GetWeight(Param.UpcomingCard);
             if (enemyCombos.ContainsKey(card.Deck))
             {
                 value -= ourCombos[card.Deck] * GetWeight(Param.KnowingCardCombo);
@@ -318,24 +307,7 @@ public class GameStrategy
         }
         return val * wsp;
     }
-    // double CombosValue(Dictionary<PatronId, int> dict)
-    // {
-    //     double val = 0;
-    //     int cnt = 0;
-    //     foreach (KeyValuePair<PatronId, int> el in dict)
-    //     {
-    //         cnt += el.Value;
-    //     }
-    //     double wsp = 1;
-    //     if (cnt > GetWeight(Param.CardLimit))
-    //     {
-    //         wsp = GetWeight(Param.CardLimit) / cnt;
-    //     }
-    //     foreach (KeyValuePair<PatronId, int> el in dict)
-    //     {
-    //         val += Math.Pow(wsp * el.Value, GetWeight(Param.ComboPower));
-    //     }
-    //     return val;
+
     public double CardEvaluation(UniqueCard card, SeededGameState gameState)
     {
         double val = GPCardTierList.GetCardTier(card.Name, currentGamePhase);
@@ -367,8 +339,6 @@ public class GameStrategy
         }
         return val;
     }
-    // }
-
 }
 
 public enum GamePhase
