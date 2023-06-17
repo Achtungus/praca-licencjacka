@@ -5,9 +5,9 @@ namespace ParamEvolution;
 public class Generation
 {
     static readonly Random rnd = new Random();
-    const int generationSize = 6;
-    const int noOfChildren = 20;
-    const int noOfFights = 250;
+    const int generationSize = 4;
+    const int noOfChildren = 10;
+    const int noOfFights = 25;
     int noOfGeneration = 0;
     List<int> scores = new();
     List<GameParams> currentGeneration = new();
@@ -43,10 +43,17 @@ public class Generation
         int totStates = noOfFights * 2 * noOfChildren;
         Console.WriteLine($"Total states: {totStates}");
 
-        ulong initSeed = (ulong)rnd.NextInt64(10000, 2000000000);
+        ulong initSeed = (ulong)rnd.NextInt64(100000, 2000000000);
         int[] wins = new int[noOfChildren];
 
         int totPlayed = 0;
+        ulong[] seedzik = new ulong[noOfFights];
+        ulong[] seedzik2 = new ulong[noOfFights];
+        for (int i = 0; i < noOfFights; i++)
+        {
+            seedzik[i] = (ulong)rnd.NextInt64(1, 1000000000);
+            seedzik2[i] = (ulong)rnd.NextInt64(1, 1000000000);
+        }
 
         Parallel.For(0, noOfChildren * 2, i =>
         {
@@ -55,8 +62,8 @@ public class Generation
             {
                 for (ulong k = 0; k < noOfFights; k++)
                 {
-                    var cMCTS = new BestMCTS(children[childIdx], initSeed - (ulong)1 - (ulong)childIdx);
-                    var cgMCTS = new BestMCTS(currentGeneration[0], initSeed);
+                    var cMCTS = new BestMCTS(children[childIdx], seedzik[k]);
+                    var cgMCTS = new BestMCTS(currentGeneration[0], seedzik2[k]);
                     var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cMCTS, cgMCTS);
                     game.Seed = initSeed + k + 1;
                     var (endState, endBoardState) = game.Play();
@@ -70,10 +77,11 @@ public class Generation
             }
             else
             {
+
                 for (ulong k = 0; k < noOfFights; k++)
                 {
-                    var cMCTS = new BestMCTS(children[childIdx], initSeed - (ulong)1 - (ulong)childIdx);
-                    var cgMCTS = new BestMCTS(currentGeneration[0], initSeed);
+                    var cMCTS = new BestMCTS(children[childIdx], seedzik2[k]);
+                    var cgMCTS = new BestMCTS(currentGeneration[0], seedzik[k]);
                     var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cgMCTS, cMCTS);
                     game.Seed = initSeed + k + 1;
                     var (endState, endBoardState) = game.Play();
@@ -95,7 +103,6 @@ public class Generation
         Console.WriteLine("------------------------------------------------------");
 
         List<(int, int)> newWins = new();
-
         for (int i = 0; i < noOfChildren; i++)
         {
             newWins.Add((wins[i], i));
@@ -104,7 +111,7 @@ public class Generation
         newWins.Sort();
         newWins.Reverse();
 
-        int noOfWorst = (int)(0.2 * generationSize);
+        int noOfWorst = 0;//(int)(0.2 * generationSize);
         List<GameParams> best = new();
 
         scores.Clear();
@@ -130,7 +137,7 @@ public class Generation
 
         foreach (var parent in currentGeneration)
         {
-            children.Add(parent.Mutate(0.3, 0.1));
+            children.Add(parent);
         }
 
         while (children.Count < noOfChildren)
@@ -138,7 +145,7 @@ public class Generation
             int a = rnd.Next(0, currentGeneration.Count - 1);
             int b = rnd.Next(0, currentGeneration.Count - 1);
             GameParams child = GameParams.Combine(currentGeneration[a], currentGeneration[b]);
-            children.Add(child.Mutate(0.3, 0.1));
+            children.Add(child.Mutate(0.3, 0.2));
         }
 
         children = SelectChildren(children);
