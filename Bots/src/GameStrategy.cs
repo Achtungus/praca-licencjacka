@@ -20,12 +20,24 @@ public class GameStrategy
         { Param.CardLimit,     new double[] { 20, 17, 17 } }, // do zbadania
         { Param.ComboPower,    new double[] { 3, 3, 3 } },
         { Param.OurAgent,      new double[] { 5, 5, 5 } }, // niezauwazalne
-        { Param.EnemyAgent,    new double[] { -40, -80, -150 } },
+        { Param.EnemyAgent,    new double[] { -60, -80, -150 } },
         { Param.OverCardLimitPenalty, new double[] { 805, 805, 805 } },
         { Param.UpcomingCard,  new double[] { 15, 25, 100 } },
         { Param.TierMultiplier, new double[] {10, 10, 10}},
         { Param.KnowingCardCombo, new double [] {1, 1, 1}}, //epsilon
         { Param.After40Bonus, new double [] {300, 300, 300}},
+        { Param.TavernPenatly, new double [] {-0.2, -0.2, -0.2}},
+        // { Param.OurPrestige,   new double[] { 10, 60, 225.91260314670154 } },
+        // { Param.EnemyPrestige, new double[] { -8.230305796881431, -60, -200 } },
+        // { Param.CardLimit,     new double[] { 20, 15.978679354645749, 17 } }, // do zbadania
+        // { Param.ComboPower,    new double[] { 3, 3, 3 } },
+        // { Param.OurAgent,      new double[] { 4.144972742259395, 5, 5 } }, // niezauwazalne
+        // { Param.EnemyAgent,    new double[] { -40, -80, -150 } },
+        // { Param.OverCardLimitPenalty, new double[] { 810.351159652348,  860.0734322493233, 786.9042550211706 } },
+        // { Param.UpcomingCard,  new double[] { 15, 25, 100 } },
+        // { Param.TierMultiplier, new double[] {10, 10, 10}},
+        // { Param.KnowingCardCombo, new double [] {1, 1, 1}}, //epsilon
+        // { Param.After40Bonus, new double [] {300, 300, 300}},
     };
 
     static private int stalaCoriolisa = 200;
@@ -280,21 +292,30 @@ public class GameStrategy
         }
 
         value += CombosValue(ourCombos) - CombosValue(enemyCombos);
+        int i = 0;
         foreach (UniqueCard card in gameState.CurrentPlayer.KnownUpcomingDraws)
         {
+            if (i++ == 3) break;
             value += HandTierList.GetCardTier(card.CommonId) * GetWeight(Param.UpcomingCard);
             if (ourCombos.ContainsKey(card.Deck))
             {
                 value += ourCombos[card.Deck] * GetWeight(Param.KnowingCardCombo);
             }
         }
+        i = 0;
         foreach (UniqueCard card in gameState.EnemyPlayer.KnownUpcomingDraws)
         {
+            if (i++ == 3) break;
             value -= HandTierList.GetCardTier(card.CommonId) * GetWeight(Param.UpcomingCard);
             if (enemyCombos.ContainsKey(card.Deck))
             {
                 value -= ourCombos[card.Deck] * GetWeight(Param.KnowingCardCombo);
             }
+        }
+
+        foreach (UniqueCard card in gameState.TavernAvailableCards)
+        {
+            if (card.Type != CardType.CONTRACT_ACTION && card.Type != CardType.CONTRACT_AGENT) value += enemyCardEvaluation(card, gameState) * GetWeight(Param.TavernPenatly);
         }
         return value;
 
@@ -325,25 +346,6 @@ public class GameStrategy
         return ((double)Math.Clamp(val + heuristicMax, 0.0, 2.0 * heuristicMax) / (2.0 * heuristicMax));
     }
 
-    double CombosValue(Dictionary<PatronId, int> dict)
-    {
-        double val = 0;
-        int cnt = 0;
-        foreach (KeyValuePair<PatronId, int> el in dict)
-        {
-            cnt += el.Value;
-        }
-        double wsp = 1;
-        if (cnt > GetWeight(Param.CardLimit))
-        {
-            wsp = GetWeight(Param.CardLimit) / cnt;
-        }
-        foreach (KeyValuePair<PatronId, int> el in dict)
-        {
-            val += comboBonus[Math.Min(comboBonus.Count - 1, el.Value)] + Math.Max(0, (el.Value - comboBonus.Count) * stalaCoriolisa); // moze dodac wspolczynnik
-        }
-        return val * wsp;
-    }
     // double CombosValue(Dictionary<PatronId, int> dict)
     // {
     //     double val = 0;
@@ -359,9 +361,30 @@ public class GameStrategy
     //     }
     //     foreach (KeyValuePair<PatronId, int> el in dict)
     //     {
-    //         val += Math.Pow(wsp * el.Value, GetWeight(Param.ComboPower));
+    //         val += comboBonus[Math.Min(comboBonus.Count - 1, el.Value)] + Math.Max(0, (el.Value - comboBonus.Count) * stalaCoriolisa); // moze dodac wspolczynnik
     //     }
-    //     return val;
+    //     return val * wsp;
+    // }
+    double CombosValue(Dictionary<PatronId, int> dict)
+    {
+        double val = 0;
+        int cnt = 0;
+        foreach (KeyValuePair<PatronId, int> el in dict)
+        {
+            cnt += el.Value;
+        }
+        double wsp = 1;
+        if (cnt > GetWeight(Param.CardLimit))
+        {
+            wsp = GetWeight(Param.CardLimit) / cnt;
+        }
+        foreach (KeyValuePair<PatronId, int> el in dict)
+        {
+            if (el.Key == PatronId.ANSEI) continue;
+            val += Math.Pow(wsp * el.Value, GetWeight(Param.ComboPower));
+        }
+        return val;
+    }
     public double CardEvaluation(UniqueCard card, SeededGameState gameState)
     {
         double val = GPCardTierList.GetCardTier((int)card.CommonId, currentGamePhase);
@@ -393,7 +416,37 @@ public class GameStrategy
         }
         return val;
     }
-    // }
+    public double enemyCardEvaluation(UniqueCard card, SeededGameState gameState)
+    {
+        double val = GPCardTierList.GetCardTier((int)card.CommonId, currentGamePhase);
+
+        var enemyCombos = new Dictionary<PatronId, int>();
+        enemyCombos[card.Deck] = 0;
+        foreach (UniqueCard c in gameState.CurrentPlayer.DrawPile)
+        {
+            if (c.Deck == card.Deck) enemyCombos[c.Deck] += 1;
+        }
+        foreach (UniqueCard c in gameState.CurrentPlayer.Hand)
+        {
+            if (c.Deck == card.Deck) enemyCombos[c.Deck] += 1;
+        }
+        foreach (UniqueCard c in gameState.CurrentPlayer.Played)
+        {
+            if (c.Deck == card.Deck) enemyCombos[c.Deck] += 1;
+        }
+        foreach (UniqueCard c in gameState.CurrentPlayer.CooldownPile)
+        {
+            if (c.Deck == card.Deck) enemyCombos[c.Deck] += 1;
+        }
+
+        val += CombosValue(enemyCombos);
+        if (enemyCombos[card.Deck] > 1)
+        {
+            enemyCombos[card.Deck] -= 1;
+            val -= CombosValue(enemyCombos);
+        }
+        return val;
+    }
 
 }
 
@@ -417,4 +470,5 @@ public enum Param
     TierMultiplier,
     KnowingCardCombo,
     After40Bonus,
+    TavernPenatly,
 }

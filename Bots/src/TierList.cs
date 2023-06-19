@@ -168,7 +168,7 @@ public static class GPCardTierList
         new int[] { B, A, B }, // 34 Card: "Pool of Shadow",
         new int[] { A, A, B }, // 35 Card: "Scratch",
         new int[] { C, C, C }, // 36 Card: "Blackfeather Brigand",
-        new int[] { B, B, C }, // 37 Card: "Blackfeather Knight",
+        new int[] { A, B, C }, // 37 Card: "Blackfeather Knight",
         new int[] { C, C, C }, // 38 Card: "Peck",
 
         new int[] { A, A, B }, // 39 Card: "Conquest",
@@ -177,7 +177,7 @@ public static class GPCardTierList
         new int[] { B, A, B }, // 42 Card: "Hel Shira Herald",
         new int[] { A, A, A }, // 43 Card: "March on Hattu",
         new int[] { B, B, B }, // 44 Card: "Shehai Summoning",
-        new int[] { S, A, B }, // 45 Card: "Warrior Wave",
+        new int[] { A, A, B }, // 45 Card: "Warrior Wave",
         new int[] { B, A, B }, // 46 Card: "Ansei Assault",
         new int[] { B, A, B }, // 47 Card: "Ansei's Victory",
         new int[] { C, B, B }, // 48 Card: "Battle Meditation",
