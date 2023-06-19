@@ -33,8 +33,16 @@ public class MCTSNode
 
     public static double UCBScore(MCTSNode? child, int parentSimulations)
     {
-        if (child is null || child.visits == 0) return double.MaxValue;
-        if (child.full) return double.MinValue;
+        if (child is null || child.visits == 0)
+        {
+            return double.MaxValue;
+        }
+
+        if (child.full)
+        {
+            return double.MinValue;
+        }
+
         return child.score + 1.41 * Math.Sqrt(Math.Log(parentSimulations) / (double)child.visits);
     }
 
@@ -44,11 +52,14 @@ public class MCTSNode
         double bestScore = double.MinValue;
 
         int index = -1;
-        foreach (var (child, move) in this.children)
+        foreach (var (child, _) in this.children)
         {
             index += 1;
 
-            if (child is null) continue;
+            if (child is null)
+            {
+                continue;
+            }
 
             if (child.score > bestScore)
             {
@@ -66,15 +77,18 @@ public class MCTSNode
         {
             return strategy.Heuristic(node.gameState);
         }
+
         SeededGameState gameState = node.gameState;
         List<Move> possibleMoves = node.children.ConvertAll<Move>(m => m.Item2);
         List<Move> notEndMoves = possibleMoves.Where(m => m.Command != CommandEnum.END_TURN).ToList();
         Move move = notEndMoves.PickRandom(rng);
+
         while (move.Command != CommandEnum.END_TURN)
         {
             (gameState, possibleMoves) = gameState.ApplyMove(move);
             notEndMoves = possibleMoves.Where(m => m.Command != CommandEnum.END_TURN).ToList();
 
+            // Dodać losowe zakończenie ruchu
             if (notEndMoves.Count > 0)
             {
                 move = notEndMoves.PickRandom(rng);
@@ -85,6 +99,7 @@ public class MCTSNode
             }
 
         }
+
         return strategy.Heuristic(gameState);
     }
 }
@@ -95,10 +110,10 @@ public class BestMCTS : AI
     static Random rnd = new();
     readonly List<ulong> seeds = new();
     readonly List<SeededRandom> rngs = new();
-    const int noOfRoots = 4;
+    const int noOfRoots = 1;
     MCTSNode?[] roots = new MCTSNode?[noOfRoots];
     TimeSpan usedTimeInTurn = TimeSpan.FromSeconds(0);
-    TimeSpan timeForMoveComputation = TimeSpan.FromSeconds(0.4);
+    TimeSpan timeForMoveComputation = TimeSpan.FromSeconds(0.3);
     TimeSpan turnTimeout = TimeSpan.FromSeconds(29.9);
     bool startOfTurn = true;
     GameStrategy strategy = new GameStrategy(10, GamePhase.EarlyGame);
@@ -111,13 +126,15 @@ public class BestMCTS : AI
             seeds.Add((ulong)rnd.Next());
             rngs.Add(new(seeds[i]));
         }
+        seeds[0] = 4345;
+        rngs[0] = new(4345);
     }
 
 
-    List<Move>? getInstantMoves(List<Move> moves, SeededGameState gameState)
+    List<Move> FilterMoves(List<Move> moves, SeededGameState gameState)
     {
-        moves.Sort(new MoveComparer());
-        if (moves.Count == 1) return null;
+        // moves.Sort(new MoveComparer());
+        if (moves.Count == 1) return moves;
         if (gameState.BoardState == BoardState.CHOICE_PENDING)
         {
             List<Move> toReturn = new();
@@ -130,7 +147,7 @@ public class BestMCTS : AI
                         var mcm = mv as MakeChoiceMove<UniqueCard>;
                         UniqueCard card = mcm!.Choices[0];
                         if (card.CommonId == CardId.BEWILDERMENT) return new List<Move> { mv };
-                        if (card.CommonId == CardId.BEWILDERMENT && gold.Count == 0) gold.Add(mv);
+                        if (card.CommonId == CardId.GOLD && gold.Count == 0) gold.Add(mv);
                         if (card.Cost == 0) toReturn.Add(mv); // moze tez byc card.Type == 'Starter'
                     }
                     if (gold.Count == 1) return gold;
@@ -166,7 +183,7 @@ public class BestMCTS : AI
                         if (flag) toReturn.Add(mv);
                     }
                     if (toReturn.Count > 0) return toReturn;
-                    return null;
+                    return moves;
                 case ChoiceFollowUp.REFRESH_CARDS: // tu i tak musi byc duzo wierzcholkow i guess
                     List<(Move, double)> possibilities = new();
                     foreach (Move mv in moves)
@@ -202,10 +219,10 @@ public class BestMCTS : AI
                             toReturn.Add(possibilities[i].Item1);
                         }
                     }
-                    if (toReturn.Count == 0) return null;
+                    if (toReturn.Count == 0) return moves;
                     return toReturn;
                 default:
-                    return null;
+                    return moves;
             }
         }
         foreach (Move mv in moves)
@@ -219,10 +236,10 @@ public class BestMCTS : AI
                 }
             }
         }
-        return null;
+        return moves;
     }
 
-    private double run(MCTSNode node, SeededRandom rng)
+    double Run(MCTSNode node, SeededRandom rng)
     {
         if (node.endTurn || node.visits == 0)
         {
@@ -258,31 +275,26 @@ public class BestMCTS : AI
             else
             {
                 var (childGameState, childPossibleMoves) = node.gameState.ApplyMove(move);
-                List<Move>? instantMoves = getInstantMoves(childPossibleMoves, childGameState);
-                if (instantMoves is null)
-                {
-                    node.children[selectedChild] = (new MCTSNode(childGameState, childPossibleMoves), move);
-                }
-                else
-                {
-                    node.children[selectedChild] = (new MCTSNode(childGameState, instantMoves), move);
-                }
+                List<Move> filteredMoves = FilterMoves(childPossibleMoves, childGameState);
+                node.children[selectedChild] = (new MCTSNode(childGameState, filteredMoves), move);
             }
         }
 
-        double result = run(node.children[selectedChild].Item1!, rng);
-        node.full = true;
+        double result = Run(node.children[selectedChild].Item1!, rng);
+
+        bool isNodeFull = true;
         foreach (var (child, move) in node.children)
         {
-            node.full &= (child is not null && child.full);
+            isNodeFull &= (child is not null && child.full);
         }
 
+        node.full = isNodeFull;
         node.visits += 1;
         node.score = Math.Max(node.score, result);
         return result;
     }
 
-    static private bool CheckIfSameCards(List<UniqueCard> l, List<UniqueCard> r)
+    static public bool CheckIfSameCards(List<UniqueCard> l, List<UniqueCard> r)
     {
         var balance = new Dictionary<CardId, int>();
 
@@ -315,16 +327,16 @@ public class BestMCTS : AI
 
         return balance.Values.All(cnt => cnt == 0);
     }
-    private bool CheckIfSameGameStateAfterOneMove(MCTSNode node, GameState gameState)
+    bool CheckIfSameGameStateAfterOneMove(MCTSNode node, GameState gameState)
     {
         return (CheckIfSameCards(node.gameState.CurrentPlayer.Hand, gameState.CurrentPlayer.Hand)
-        && CheckIfSameCards(node.gameState.TavernAvailableCards, gameState.TavernAvailableCards)
-        && CheckIfSameCards(node.gameState.CurrentPlayer.CooldownPile, gameState.CurrentPlayer.CooldownPile) // chyba niepotrzebne
-        && CheckIfSameCards(node.gameState.CurrentPlayer.DrawPile, gameState.CurrentPlayer.DrawPile)    // chyba niepotrzebne
+             && CheckIfSameCards(node.gameState.TavernAvailableCards, gameState.TavernAvailableCards)
+             && CheckIfSameCards(node.gameState.CurrentPlayer.CooldownPile, gameState.CurrentPlayer.CooldownPile) // chyba niepotrzebne
+             && CheckIfSameCards(node.gameState.CurrentPlayer.DrawPile, gameState.CurrentPlayer.DrawPile)    // chyba niepotrzebne
         );
     }
 
-    static private bool CheckIfSameEffects(List<UniqueEffect> e1, List<UniqueEffect> e2)
+    static public bool CheckIfSameEffects(List<UniqueEffect> e1, List<UniqueEffect> e2)
     {
         var balance = new Dictionary<(CardId, EffectType, int, int), int>();
         foreach (UniqueEffect ef in e1)
@@ -352,56 +364,38 @@ public class BestMCTS : AI
 
         return balance.Values.All(cnt => cnt == 0);
     }
-    static private bool AreIsomorphic(Move mv1, Move mv2)
-    {
-        if (mv1.Command != mv2.Command) return false;
-        if (mv1.Command == CommandEnum.END_TURN) return true;
-        if (mv1.Command == CommandEnum.CALL_PATRON)
-        {
-            var spm1 = mv1 as SimplePatronMove;
-            var spm2 = mv2 as SimplePatronMove;
-            return (spm1!.PatronId == spm2!.PatronId);
-        }
-        if (mv1.Command == CommandEnum.MAKE_CHOICE)
-        {
-            var mcm1 = mv1 as MakeChoiceMove<UniqueCard>;
-            var mcm2 = mv2 as MakeChoiceMove<UniqueCard>;
-            if (mcm1 is null && mcm2 is null)
-            {
-                var mcm21 = mv1 as MakeChoiceMove<UniqueEffect>;
-                var mcm22 = mv2 as MakeChoiceMove<UniqueEffect>;
-                return CheckIfSameEffects(mcm21!.Choices, mcm22!.Choices);
-            }
-            else if (mcm1 is not null && mcm2 is not null)
-            {
-                return CheckIfSameCards(mcm1!.Choices, mcm2!.Choices);
-            }
-            return false;
-        }
-        var scm1 = mv1 as SimpleCardMove;
-        var scm2 = mv2 as SimpleCardMove;
-        return (scm1!.Card.CommonId == scm2!.Card.CommonId);
-    }
     public override PatronId SelectPatron(List<PatronId> availablePatrons, int round)
     {
         if (availablePatrons.Contains(PatronId.DUKE_OF_CROWS)) return PatronId.DUKE_OF_CROWS;
         return availablePatrons.PickRandom(rngs[0]);
     }
 
-    void ChooseStrategy(GameState gameState)
+    void SelectStrategy(GameState gameState)
     {
         var currentPlayer = gameState.CurrentPlayer;
         int cardCount = currentPlayer.Hand.Count + currentPlayer.CooldownPile.Count + currentPlayer.DrawPile.Count;
         Debug.Assert(currentPlayer.Played.Count == 0);
         int points = gameState.CurrentPlayer.Prestige;
-        if (points >= 27 || gameState.EnemyPlayer.Prestige >= 30) strategy = new GameStrategy(cardCount, GamePhase.LateGame);
-        else if (points <= 10 && gameState.EnemyPlayer.Prestige <= 13) strategy = new GameStrategy(cardCount, GamePhase.EarlyGame);
-        else strategy = new GameStrategy(cardCount, GamePhase.MidGame);
+        if (points >= 27 || gameState.EnemyPlayer.Prestige >= 30)
+        {
+            strategy = new GameStrategy(cardCount, GamePhase.LateGame);
+        }
+        else if (points <= 10 && gameState.EnemyPlayer.Prestige <= 13)
+        {
+            strategy = new GameStrategy(cardCount, GamePhase.EarlyGame);
+        }
+        else
+        {
+            strategy = new GameStrategy(cardCount, GamePhase.MidGame);
+        }
     }
 
     public override Move Play(GameState gameState, List<Move> possibleMoves)
     {
-        if (startOfTurn) ChooseStrategy(gameState);
+        if (startOfTurn)
+        {
+            SelectStrategy(gameState);
+        }
 
         if (possibleMoves.Count == 1 && possibleMoves[0].Command == CommandEnum.END_TURN)
         {
@@ -415,32 +409,19 @@ public class BestMCTS : AI
             for (int i = 0; i < noOfRoots; i++)
             {
                 SeededGameState seededGameState = gameState.ToSeededGameState(seeds[i]);
-                List<Move>? instantMoves = getInstantMoves(possibleMoves, seededGameState);
-                if (instantMoves is null)
-                {
-                    roots[i] = new MCTSNode(seededGameState, possibleMoves);
-                }
-                else
-                {
-                    roots[i] = new MCTSNode(seededGameState, instantMoves);
-                }
+                List<Move> filteredMoves = FilterMoves(possibleMoves, seededGameState);
+                roots[i] = new MCTSNode(seededGameState, filteredMoves);
             }
             startOfTurn = false;
         }
+
         for (int i = 0; i < noOfRoots; i++)
         {
             if (!CheckIfSameGameStateAfterOneMove(roots[i]!, gameState))
             {
                 SeededGameState seededGameState = gameState.ToSeededGameState(seeds[i]);
-                List<Move>? instantMoves = getInstantMoves(possibleMoves, seededGameState);
-                if (instantMoves is null)
-                {
-                    roots[i] = new MCTSNode(seededGameState, possibleMoves);
-                }
-                else
-                {
-                    roots[i] = new MCTSNode(seededGameState, instantMoves);
-                }
+                List<Move> filteredMoves = FilterMoves(possibleMoves, seededGameState);
+                roots[i] = new MCTSNode(seededGameState, filteredMoves);
             }
             else
             {
@@ -466,15 +447,19 @@ public class BestMCTS : AI
                 s.Start();
                 while (s.Elapsed < timeForMoveComputation / noOfRoots && !roots[i]!.full)
                 {
-                    run(roots[i]!, rngs[i]);
+                    Run(roots[i]!, rngs[i]);
                     actionCounter++;
                 }
-                // if (!roots[i]!.full) Console.WriteLine(actionCounter.ToString());
+                // Console.WriteLine(totCreated.ToString() + " " + actionCounter.ToString());
             }
+
             for (int i = 1; i < noOfRoots; i++) // Sanity check
             {
                 Debug.Assert(roots[i]!.children.Count == roots[0]!.children.Count);
-                for (int j = 0; j < roots[0]!.children.Count; j++) Debug.Assert(AreIsomorphic(roots[0]!.children[j].Item2, roots[i]!.children[j].Item2));
+                for (int j = 0; j < roots[0]!.children.Count; j++)
+                {
+                    Debug.Assert(MoveComparer.AreIsomorphic(roots[0]!.children[j].Item2, roots[i]!.children[j].Item2));
+                }
             }
 
             int idx = 0;
@@ -494,6 +479,7 @@ public class BestMCTS : AI
                     idx = j;
                 }
             }
+
             move = roots[0]!.children[idx].Item2;
             for (int i = 0; i < noOfRoots; i++)
             {
@@ -503,7 +489,7 @@ public class BestMCTS : AI
         Move move_out = possibleMoves[0];
         foreach (Move mv in possibleMoves)
         {
-            if (AreIsomorphic(move, mv))
+            if (MoveComparer.AreIsomorphic(move, mv))
             {
                 move_out = mv;
                 break;
@@ -519,21 +505,19 @@ public class BestMCTS : AI
 
     public override void GameEnd(EndGameState state, FullGameState? finalBoardState)
     {
-        if (state.Reason == GameEndReason.INCORRECT_MOVE || state.Reason == GameEndReason.TURN_TIMEOUT || state.Reason == GameEndReason.BOT_EXCEPTION)
-        {
-            Console.WriteLine("-------------------------------------------");
-            Console.WriteLine(state.Reason);
-            Console.WriteLine(finalBoardState!.InitialSeed);
-            Console.WriteLine(state.Winner);
-            if (finalBoardState!.EnemyPlayer.PlayerID == PlayerEnum.PLAYER1)
-                Console.WriteLine("Player 1: " + finalBoardState!.EnemyPlayer.Prestige.ToString());
-            else
-                Console.WriteLine("Player 1: " + finalBoardState!.CurrentPlayer.Prestige.ToString());
-            if (finalBoardState!.EnemyPlayer.PlayerID == PlayerEnum.PLAYER2)
-                Console.WriteLine("Player 2: " + finalBoardState!.EnemyPlayer.Prestige.ToString());
-            else
-                Console.WriteLine("Player 2: " + finalBoardState!.CurrentPlayer.Prestige.ToString());
-        }
+        Console.WriteLine("-------------------------------------------");
+        Console.WriteLine(state.Reason);
+        // Console.WriteLine(finalBoardState!.InitialSeed);
+        // Console.WriteLine(state.Winner);
+        // Console.WriteLine(state.AdditionalContext);
+        if (finalBoardState!.EnemyPlayer.PlayerID == PlayerEnum.PLAYER1)
+            Console.WriteLine("Player 1: " + finalBoardState!.EnemyPlayer.Prestige.ToString());
+        else
+            Console.WriteLine("Player 1: " + finalBoardState!.CurrentPlayer.Prestige.ToString());
+        if (finalBoardState!.EnemyPlayer.PlayerID == PlayerEnum.PLAYER2)
+            Console.WriteLine("Player 2: " + finalBoardState!.EnemyPlayer.Prestige.ToString());
+        else
+            Console.WriteLine("Player 2: " + finalBoardState!.CurrentPlayer.Prestige.ToString());
         // Console.WriteLine(state.AdditionalContext);
         // if (state.Reason == GameEndReason.INCORRECT_MOVE)
         // {
@@ -562,14 +546,14 @@ public class PairOnlySecond : Comparer<(Move, double)>
 }
 public class MoveComparer : Comparer<Move>
 {
-    private ulong Hash(Move x)
+    public static ulong HashMove(Move x)
     {
-        ulong ret = 0;
+        ulong hash = 0;
 
         if (x.Command == CommandEnum.CALL_PATRON)
         {
             var mx = x as SimplePatronMove;
-            ret = (ulong)mx!.PatronId;
+            hash = (ulong)mx!.PatronId;
         }
         else if (x.Command == CommandEnum.MAKE_CHOICE)
         {
@@ -577,27 +561,33 @@ public class MoveComparer : Comparer<Move>
             if (mx is not null)
             {
                 var ids = mx!.Choices.Select(card => (ulong)card.CommonId).OrderBy(id => id);
-                foreach (ulong a in ids) ret = ret * (ulong)200 + a;
+                foreach (ulong id in ids) hash = hash * 200UL + id;
             }
             else
             {
                 var mxp = x as MakeChoiceMove<UniqueEffect>;
-                var ids = mxp!.Choices.Select(ef => (ulong)ef.ParentCard.CommonId).OrderBy(id => id);
-                foreach (ulong a in ids) ret = ret * (ulong)200 + a;
-                ret += (ulong)1000000000;
+                var ids = mxp!.Choices.Select(ef => (ulong)ef.Type).OrderBy(type => type);
+                foreach (ulong id in ids) hash = hash * 200UL + id;
+                hash += 1_000_000_000UL;
             }
         }
         else if (x.Command != CommandEnum.END_TURN)
         {
             var mx = x as SimpleCardMove;
-            ret = (ulong)mx!.Card.CommonId;
+            hash = (ulong)mx!.Card.CommonId;
         }
-        return ret + (ulong)100000000000 * (ulong)x.Command;
+        return hash + 1_000_000_000_000UL * (ulong)x.Command;
     }
     public override int Compare(Move x, Move y)
     {
-        ulong hx = Hash(x);
-        ulong hy = Hash(y);
+        ulong hx = HashMove(x);
+        ulong hy = HashMove(y);
         return hx.CompareTo(hy);
+    }
+
+    public static bool AreIsomorphic(Move move1, Move move2)
+    {
+        if (move1.Command != move2.Command) return false; // Speed up
+        return HashMove(move1) == HashMove(move2);
     }
 }
