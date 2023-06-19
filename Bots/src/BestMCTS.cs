@@ -92,22 +92,32 @@ public class MCTSNode
 
 public class BestMCTS : AI
 {
-    const ulong seed = 123;
-    readonly SeededRandom rng = new(seed);
-    MCTSNode? root = null;
+    static Random rnd = new();
+    readonly List<ulong> seeds = new();
+    readonly List<SeededRandom> rngs = new();
+    const int noOfRoots = 4;
+    MCTSNode?[] roots = new MCTSNode?[noOfRoots];
     TimeSpan usedTimeInTurn = TimeSpan.FromSeconds(0);
-    TimeSpan timeForMoveComputation = TimeSpan.FromSeconds(3.0);
+    TimeSpan timeForMoveComputation = TimeSpan.FromSeconds(0.4);
     TimeSpan turnTimeout = TimeSpan.FromSeconds(29.9);
     bool startOfTurn = true;
     GameStrategy strategy = new GameStrategy(10, GamePhase.EarlyGame);
     int totCreated = 0;
 
-    public BestMCTS() { }
+    public BestMCTS()
+    {
+        for (int i = 0; i < noOfRoots; i++)
+        {
+            seeds.Add((ulong)rnd.Next());
+            rngs.Add(new(seeds[i]));
+        }
+    }
+
 
     List<Move>? getInstantMoves(List<Move> moves, SeededGameState gameState)
     {
+        moves.Sort(new MoveComparer());
         if (moves.Count == 1) return null;
-
         if (gameState.BoardState == BoardState.CHOICE_PENDING)
         {
             List<Move> toReturn = new();
@@ -272,7 +282,7 @@ public class BestMCTS : AI
         return result;
     }
 
-    private bool CheckIfSameCards(List<UniqueCard> l, List<UniqueCard> r)
+    static private bool CheckIfSameCards(List<UniqueCard> l, List<UniqueCard> r)
     {
         var balance = new Dictionary<CardId, int>();
 
@@ -314,7 +324,7 @@ public class BestMCTS : AI
         );
     }
 
-    private bool CheckIfSameEffects(List<UniqueEffect> e1, List<UniqueEffect> e2)
+    static private bool CheckIfSameEffects(List<UniqueEffect> e1, List<UniqueEffect> e2)
     {
         var balance = new Dictionary<(CardId, EffectType, int, int), int>();
         foreach (UniqueEffect ef in e1)
@@ -342,7 +352,7 @@ public class BestMCTS : AI
 
         return balance.Values.All(cnt => cnt == 0);
     }
-    private bool AreIsomorphic(Move mv1, Move mv2)
+    static private bool AreIsomorphic(Move mv1, Move mv2)
     {
         if (mv1.Command != mv2.Command) return false;
         if (mv1.Command == CommandEnum.END_TURN) return true;
@@ -375,7 +385,7 @@ public class BestMCTS : AI
     public override PatronId SelectPatron(List<PatronId> availablePatrons, int round)
     {
         if (availablePatrons.Contains(PatronId.DUKE_OF_CROWS)) return PatronId.DUKE_OF_CROWS;
-        return availablePatrons.PickRandom(rng);
+        return availablePatrons.PickRandom(rngs[0]);
     }
 
     void ChooseStrategy(GameState gameState)
@@ -400,24 +410,43 @@ public class BestMCTS : AI
             return Move.EndTurn();
         }
 
-        if (startOfTurn || !CheckIfSameGameStateAfterOneMove(root!, gameState))
+        if (startOfTurn)
         {
-            SeededGameState seededGameState = gameState.ToSeededGameState(seed);
-            List<Move>? instantMoves = getInstantMoves(possibleMoves, seededGameState);
-            if (instantMoves is null)
+            for (int i = 0; i < noOfRoots; i++)
             {
-                root = new MCTSNode(seededGameState, possibleMoves);
-            }
-            else
-            {
-                root = new MCTSNode(seededGameState, instantMoves);
+                SeededGameState seededGameState = gameState.ToSeededGameState(seeds[i]);
+                List<Move>? instantMoves = getInstantMoves(possibleMoves, seededGameState);
+                if (instantMoves is null)
+                {
+                    roots[i] = new MCTSNode(seededGameState, possibleMoves);
+                }
+                else
+                {
+                    roots[i] = new MCTSNode(seededGameState, instantMoves);
+                }
             }
             startOfTurn = false;
         }
-        else
+        for (int i = 0; i < noOfRoots; i++)
         {
-            if (gameState.BoardState != root!.gameState.BoardState) Console.WriteLine("Tutaj");
-            Debug.Assert(gameState.BoardState == root!.gameState.BoardState);
+            if (!CheckIfSameGameStateAfterOneMove(roots[i]!, gameState))
+            {
+                SeededGameState seededGameState = gameState.ToSeededGameState(seeds[i]);
+                List<Move>? instantMoves = getInstantMoves(possibleMoves, seededGameState);
+                if (instantMoves is null)
+                {
+                    roots[i] = new MCTSNode(seededGameState, possibleMoves);
+                }
+                else
+                {
+                    roots[i] = new MCTSNode(seededGameState, instantMoves);
+                }
+            }
+            else
+            {
+                if (gameState.BoardState != roots[i]!.gameState.BoardState) Console.WriteLine("Tutaj");
+                Debug.Assert(gameState.BoardState == roots[i]!.gameState.BoardState);
+            }
         }
 
 
@@ -425,30 +454,51 @@ public class BestMCTS : AI
         if (usedTimeInTurn + timeForMoveComputation >= turnTimeout)
         {
             Debug.Assert(false);
-            move = possibleMoves.PickRandom(rng);
+            move = possibleMoves.PickRandom(rngs[0]);
         }
         else
         {
             int actionCounter = 0;
-            totCreated = 0;
-            for (int runs = 0; runs < 200 && !root!.full; runs++)
+            for (int i = 0; i < noOfRoots; i++)
             {
-                run(root!, rng);
-                actionCounter++;
+                totCreated = 0;
+                Stopwatch s = new Stopwatch();
+                s.Start();
+                while (s.Elapsed < timeForMoveComputation / noOfRoots && !roots[i]!.full)
+                {
+                    run(roots[i]!, rngs[i]);
+                    actionCounter++;
+                }
+                // if (!roots[i]!.full) Console.WriteLine(actionCounter.ToString());
             }
-            // Stopwatch s = new Stopwatch();
-            // s.Start();
-            // while (s.Elapsed < timeForMoveComputation && !root!.full)
-            // {
-            //     run(root!, rng);
-            //     actionCounter++;
-            // }
-            // Log(actionCounter.ToString());
-            // Log("Ile dzieci: " + root!.children.Count.ToString());
-            // Console.WriteLine(actionCounter);
-            // Console.WriteLine($"totCreated = {totCreated}");
-            // usedTimeInTurn += timeForMoveComputation;
-            (root, move) = root!.children[root!.SelectBestChildIndex()];
+            for (int i = 1; i < noOfRoots; i++) // Sanity check
+            {
+                Debug.Assert(roots[i]!.children.Count == roots[0]!.children.Count);
+                for (int j = 0; j < roots[0]!.children.Count; j++) Debug.Assert(AreIsomorphic(roots[0]!.children[j].Item2, roots[i]!.children[j].Item2));
+            }
+
+            int idx = 0;
+            double val = 0;
+            for (int j = 0; j < roots[0]!.children.Count; j++)
+            {
+                double cur = 0;
+                for (int i = 0; i < noOfRoots; i++)
+                {
+                    cur += roots[i]!.children[j].Item1!.score;
+                }
+                cur /= noOfRoots;
+                Debug.Assert(cur >= 0.0 && cur <= 1.0);
+                if (cur > val)
+                {
+                    val = cur;
+                    idx = j;
+                }
+            }
+            move = roots[0]!.children[idx].Item2;
+            for (int i = 0; i < noOfRoots; i++)
+            {
+                roots[i] = roots[i]!.children[idx].Item1;
+            }
         }
         Move move_out = possibleMoves[0];
         foreach (Move mv in possibleMoves)
@@ -469,8 +519,21 @@ public class BestMCTS : AI
 
     public override void GameEnd(EndGameState state, FullGameState? finalBoardState)
     {
-        // Console.WriteLine("-------------------------------------------");
-        // Console.WriteLine(state.Reason);
+        if (state.Reason == GameEndReason.INCORRECT_MOVE || state.Reason == GameEndReason.TURN_TIMEOUT || state.Reason == GameEndReason.BOT_EXCEPTION)
+        {
+            Console.WriteLine("-------------------------------------------");
+            Console.WriteLine(state.Reason);
+            Console.WriteLine(finalBoardState!.InitialSeed);
+            Console.WriteLine(state.Winner);
+            if (finalBoardState!.EnemyPlayer.PlayerID == PlayerEnum.PLAYER1)
+                Console.WriteLine("Player 1: " + finalBoardState!.EnemyPlayer.Prestige.ToString());
+            else
+                Console.WriteLine("Player 1: " + finalBoardState!.CurrentPlayer.Prestige.ToString());
+            if (finalBoardState!.EnemyPlayer.PlayerID == PlayerEnum.PLAYER2)
+                Console.WriteLine("Player 2: " + finalBoardState!.EnemyPlayer.Prestige.ToString());
+            else
+                Console.WriteLine("Player 2: " + finalBoardState!.CurrentPlayer.Prestige.ToString());
+        }
         // Console.WriteLine(state.AdditionalContext);
         // if (state.Reason == GameEndReason.INCORRECT_MOVE)
         // {
@@ -487,15 +550,6 @@ public class BestMCTS : AI
         //     Console.WriteLine(finalBoardState.EnemyPlayer.Played);
         //     Console.WriteLine("-------------------------------------------");
         // }
-        // Console.WriteLine(state.Winner);
-        // if (finalBoardState!.EnemyPlayer.PlayerID == PlayerEnum.PLAYER1)
-        //     Console.WriteLine("Player 1: " + finalBoardState!.EnemyPlayer.Prestige.ToString());
-        // else
-        //     Console.WriteLine("Player 1: " + finalBoardState!.CurrentPlayer.Prestige.ToString());
-        // if (finalBoardState!.EnemyPlayer.PlayerID == PlayerEnum.PLAYER2)
-        //     Console.WriteLine("Player 2: " + finalBoardState!.EnemyPlayer.Prestige.ToString());
-        // else
-        //     Console.WriteLine("Player 2: " + finalBoardState!.CurrentPlayer.Prestige.ToString());
     }
 }
 
@@ -504,5 +558,46 @@ public class PairOnlySecond : Comparer<(Move, double)>
     public override int Compare((Move, double) a, (Move, double) b)
     {
         return a.Item2.CompareTo(b.Item2);
+    }
+}
+public class MoveComparer : Comparer<Move>
+{
+    private ulong Hash(Move x)
+    {
+        ulong ret = 0;
+
+        if (x.Command == CommandEnum.CALL_PATRON)
+        {
+            var mx = x as SimplePatronMove;
+            ret = (ulong)mx!.PatronId;
+        }
+        else if (x.Command == CommandEnum.MAKE_CHOICE)
+        {
+            var mx = x as MakeChoiceMove<UniqueCard>;
+            if (mx is not null)
+            {
+                var ids = mx!.Choices.Select(card => (ulong)card.CommonId).OrderBy(id => id);
+                foreach (ulong a in ids) ret = ret * (ulong)200 + a;
+            }
+            else
+            {
+                var mxp = x as MakeChoiceMove<UniqueEffect>;
+                var ids = mxp!.Choices.Select(ef => (ulong)ef.ParentCard.CommonId).OrderBy(id => id);
+                foreach (ulong a in ids) ret = ret * (ulong)200 + a;
+                ret += (ulong)1000000000;
+            }
+        }
+        else if (x.Command != CommandEnum.END_TURN)
+        {
+            var mx = x as SimpleCardMove;
+            ret = (ulong)mx!.Card.CommonId;
+        }
+        return ret + (ulong)100000000000 * (ulong)x.Command;
+    }
+    public override int Compare(Move x, Move y)
+    {
+        ulong hx = Hash(x);
+        ulong hy = Hash(y);
+        return hx.CompareTo(hy);
     }
 }

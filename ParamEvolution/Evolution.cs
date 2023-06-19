@@ -5,9 +5,9 @@ namespace ParamEvolution;
 public class Generation
 {
     static readonly Random rnd = new Random();
-    const int generationSize = 4;
-    const int noOfChildren = 10;
-    const int noOfFights = 25;
+    const int generationSize = 5;
+    const int noOfChildren = 12;
+    const int noOfFights = 50;
     int noOfGeneration = 0;
     List<int> scores = new();
     List<GameParams> currentGeneration = new();
@@ -17,7 +17,7 @@ public class Generation
         currentGeneration.Add(gameParams);
         for (int i = 0; i + 1 < generationSize; i++)
         {
-            currentGeneration.Add(gameParams.Mutate(1.0, 0.3));
+            currentGeneration.Add(gameParams.Mutate(1.0, 0.5));
         }
         for (int i = 0; i < generationSize; i++)
         {
@@ -145,7 +145,7 @@ public class Generation
             int a = rnd.Next(0, currentGeneration.Count - 1);
             int b = rnd.Next(0, currentGeneration.Count - 1);
             GameParams child = GameParams.Combine(currentGeneration[a], currentGeneration[b]);
-            children.Add(child.Mutate(0.3, 0.2));
+            children.Add(child.Mutate(0.5, 0.4));
         }
 
         children = SelectChildren(children);

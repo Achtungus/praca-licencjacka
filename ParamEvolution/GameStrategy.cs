@@ -315,6 +315,26 @@ public class GameStrategy
         return ((double)Math.Clamp(val + heuristicMax, 0.0, 2.0 * heuristicMax) / (2.0 * heuristicMax));
     }
 
+    // double CombosValue(Dictionary<PatronId, int> dict)
+    // {
+    //     double val = 0;
+    //     int cnt = 0;
+    //     foreach (KeyValuePair<PatronId, int> el in dict)
+    //     {
+    //         cnt += el.Value;
+    //     }
+    //     double wsp = 1;
+    //     if (cnt > GetWeight(Param.CardLimit))
+    //     {
+    //         wsp = GetWeight(Param.CardLimit) / cnt;
+    //     }
+    //     foreach (KeyValuePair<PatronId, int> el in dict)
+    //     {
+    //         val += comboBonus[Math.Min(comboBonus.Count - 1, el.Value)] + Math.Max(0, (el.Value - comboBonus.Count) * stalaCoriolisa); // moze dodac wspolczynnik
+    //     }
+    //     return val * wsp;
+    // }
+
     double CombosValue(Dictionary<PatronId, int> dict)
     {
         double val = 0;
@@ -330,9 +350,9 @@ public class GameStrategy
         }
         foreach (KeyValuePair<PatronId, int> el in dict)
         {
-            val += comboBonus[Math.Min(comboBonus.Count - 1, el.Value)] + Math.Max(0, (el.Value - comboBonus.Count) * stalaCoriolisa); // moze dodac wspolczynnik
+            val += Math.Pow(wsp * el.Value, GetWeight(Param.ComboPower));
         }
-        return val * wsp;
+        return val;
     }
 
     public double CardEvaluation(UniqueCard card, SeededGameState gameState)
@@ -366,7 +386,6 @@ public class GameStrategy
         }
         return val;
     }
-    // }
 
 }
 
