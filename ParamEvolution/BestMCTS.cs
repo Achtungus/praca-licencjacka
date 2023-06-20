@@ -416,7 +416,7 @@ public class BestMCTS : AI
         }
 
         Move move;
-        for (int runs = 0; runs < 300 && !root!.full; runs++)
+        for (int runs = 0; runs < 200 && !root!.full; runs++)
         {
             run(root!, rng);
         }

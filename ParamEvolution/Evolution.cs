@@ -5,9 +5,10 @@ namespace ParamEvolution;
 public class Generation
 {
     static readonly Random rnd = new Random();
-    const int generationSize = 5;
-    const int noOfChildren = 12;
-    const int noOfFights = 50;
+    const int generationSize = 15;
+    const int noOfChildren = 75;
+    const int noOfFights = 10;
+    const double crossoverProbability = 0.7;
     int noOfGeneration = 0;
     List<int> scores = new();
     List<GameParams> currentGeneration = new();
@@ -63,8 +64,11 @@ public class Generation
                 for (ulong k = 0; k < noOfFights; k++)
                 {
                     var cMCTS = new BestMCTS(children[childIdx], seedzik[k]);
-                    var cgMCTS = new BestMCTS(currentGeneration[0], seedzik2[k]);
-                    var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cMCTS, cgMCTS);
+                    var enemy = new BeamSearchBot();
+                    var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cMCTS, enemy);
+                    // var cMCTS = new BestMCTS(children[childIdx], seedzik[k]);
+                    // var cgMCTS = new BestMCTS(currentGeneration[0], seedzik2[k]);
+                    // var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cMCTS, cgMCTS);
                     game.Seed = initSeed + k + 1;
                     var (endState, endBoardState) = game.Play();
                     if (endState.Winner == PlayerEnum.PLAYER1) Interlocked.Increment(ref wins[childIdx]);
@@ -81,8 +85,11 @@ public class Generation
                 for (ulong k = 0; k < noOfFights; k++)
                 {
                     var cMCTS = new BestMCTS(children[childIdx], seedzik2[k]);
-                    var cgMCTS = new BestMCTS(currentGeneration[0], seedzik[k]);
-                    var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cgMCTS, cMCTS);
+                    var enemy = new BeamSearchBot();
+                    var game = new ScriptsOfTribute.AI.ScriptsOfTribute(enemy, cMCTS);
+                    // var cMCTS = new BestMCTS(children[childIdx], seedzik2[k]);
+                    // var cgMCTS = new BestMCTS(currentGeneration[0], seedzik[k]);
+                    // var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cgMCTS, cMCTS);
                     game.Seed = initSeed + k + 1;
                     var (endState, endBoardState) = game.Play();
                     if (endState.Winner == PlayerEnum.PLAYER2) Interlocked.Increment(ref wins[childIdx]);
@@ -111,7 +118,7 @@ public class Generation
         newWins.Sort();
         newWins.Reverse();
 
-        int noOfWorst = 0;//(int)(0.2 * generationSize);
+        int noOfWorst = (int)(0.15 * generationSize);
         List<GameParams> best = new();
 
         scores.Clear();
@@ -125,7 +132,7 @@ public class Generation
         wins.Reverse();
         for (int i = 0; i < noOfWorst; i++)
         {
-            best.Add(children[newWins[i].Item2].Mutate(0.8, 0.3));
+            best.Add(children[newWins[i].Item2].Mutate(0.8, 0.4));
             scores.Add(newWins[i].Item1);
         }
 
@@ -135,17 +142,23 @@ public class Generation
     {
         List<GameParams> children = new();
 
-        foreach (var parent in currentGeneration)
+        while (children.Count < (int)(noOfChildren * crossoverProbability))
+        {
+            int a = rnd.Next(0, currentGeneration.Count - 1);
+            int b = rnd.Next(0, currentGeneration.Count - 1);
+            GameParams child = GameParams.Combine(currentGeneration[a], currentGeneration[b]);
+            children.Add(child.Mutate(0.4, 0.05));
+        }
+
+        foreach (var parent in currentGeneration.Take(2))
         {
             children.Add(parent);
         }
 
         while (children.Count < noOfChildren)
         {
-            int a = rnd.Next(0, currentGeneration.Count - 1);
-            int b = rnd.Next(0, currentGeneration.Count - 1);
-            GameParams child = GameParams.Combine(currentGeneration[a], currentGeneration[b]);
-            children.Add(child.Mutate(0.5, 0.4));
+            int idx = rnd.Next(0, currentGeneration.Count - 1);
+            children.Add(currentGeneration[idx].Mutate(0.3, 0.2));
         }
 
         children = SelectChildren(children);
