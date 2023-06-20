@@ -48,10 +48,12 @@ public class GameParams
     static public GameParams Combine(GameParams l, GameParams r)
     {
         GameParams newParams = new();
+
+        int pos = rnd.Next(defaultGameParams.Count - 1);
+        int curPos = 0;
         foreach (var key in defaultGameParams.Keys)
         {
-            bool takeFromL = rnd.Next(2) == 0;
-            if (takeFromL)
+            if (curPos < pos)
             {
                 var lValues = l.gameParams[key];
                 newParams.gameParams[key] = new double[] { lValues[0], lValues[1], lValues[2] };
@@ -61,6 +63,7 @@ public class GameParams
                 var rValues = r.gameParams[key];
                 newParams.gameParams[key] = new double[] { rValues[0], rValues[1], rValues[2] };
             }
+            curPos += 1;
         }
         return newParams;
     }
