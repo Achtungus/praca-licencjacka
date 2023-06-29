@@ -15,22 +15,35 @@ public class GameStrategy
     };
 
     static readonly Dictionary<Param, double[]> weight = new Dictionary<Param, double[]> {
-        { Param.OurPrestige,          new double[] { 10, 60, 200 } },
-        { Param.EnemyPrestige,        new double[] { -10, -60, -200 } },
-        { Param.CardLimit,            new double[] { 20, 17, 17 } }, // do zbadania
-        { Param.ComboPower,           new double[] { 3, 3, 3 } },
-        { Param.OurAgent,             new double[] { 5, 5, 5 } }, // niezauwazalne
-        { Param.EnemyAgent,           new double[] { -60, -80, -150 } },
-        { Param.OverCardLimitPenalty, new double[] { 805, 805, 805 } },
-        { Param.UpcomingCard,         new double[] { 15, 25, 100 } },
-        { Param.TierMultiplier,       new double[] {10, 10, 10}},
-        { Param.KnowingCardCombo,     new double [] {1, 1, 1}}, //epsilon
-        { Param.After40Bonus,         new double [] {300, 300, 300}},
-        { Param.TavernPenatly,        new double [] {-0.2, -0.2, -0.2}},
+        { Param.Crow,                 new double [] { 357.16459375015, 401.2613140399906, 439.46242346573 } },
+        { Param.Ansei,                new double [] { 69.72651456206626, 65.17496269303498, 51.41566943715283 } },
+        { Param.Prestige,             new double [] { 14.406547468356404, 115.43794731430911, 244.10581096000053 } },
+        { Param.CardLimit,            new double [] { 3.5835821274533806, 9.802856656572525, 6.1746487022788745 } },
+        { Param.ComboPower,           new double [] { 1.4531637982059311, 2.017681169347004, 1.7654122025476535 } },
+        { Param.OurAgent,             new double [] { 2.4073301922708956, 1.204796748703784, 0.6282777779201613 } },
+        { Param.EnemyAgent,           new double [] { -36.38168831074075, -31.120871807130026, -165.21582096426815 } },
+        { Param.UpcomingCard,         new double [] { 14.452740668849344, 10.997295351493275, 96.387175942189 } },
+        { Param.TierMultiplier,       new double [] { 32.45573949797829, 15.3624756191444, 17.865162201619203 } },
+        { Param.TavernPenatly,        new double [] { -1.0194847580786344, -1.6236002964954, -1.8425554404914708 } },
+        { Param.KnowingCardCombo,     new double [] { 0.9856322443431382, 1.2677569556414718, 1.8798439140688314 } },
+        { Param.After40Bonus,         new double [] { 469.6287162071635, 562.8022272879504, 436.4502784121612 } },
     };
 
-    const int stalaCoriolisa = 200;
-    static readonly int[] comboBonus = new int[] { 1, 20, 100, 211, 540 };
+    // static readonly Dictionary<Param, double[]> weight = new Dictionary<Param, double[]> {
+    //     { Param.Crow,                 new double [] { 300, 500, 600 } },
+    //     { Param.Ansei,                new double [] { 50, 50, 50 } },
+    //     { Param.Prestige,             new double [] { 10, 60, 200 } },
+    //     { Param.CardLimit,            new double [] { 13, 13, 13 } },
+    //     { Param.ComboPower,           new double [] { 3, 3, 3 } },
+    //     { Param.OurAgent,             new double [] { 1.1, 1.1, 1.1 } },
+    //     { Param.EnemyAgent,           new double [] { -60, -80, -150 } },
+    //     { Param.UpcomingCard,         new double [] { 15, 25, 100 } },
+    //     { Param.TierMultiplier,       new double [] { 10, 10, 10}},
+    //     { Param.TavernPenatly,        new double [] { -2, -2, -2}},
+    //     { Param.KnowingCardCombo,     new double [] { 1, 1, 1}},
+    //     { Param.After40Bonus,         new double [] { 300, 300, 300}},
+    // };
+
     const int heuristicMin = -10000;
     const int heuristicMax = 10000;
     readonly int cardCount;
@@ -58,8 +71,8 @@ public class GameStrategy
         }
         power = Math.Max(power, 0);
         int afterRoundPoints = gameState.CurrentPlayer.Prestige + power;
-        value += afterRoundPoints * GetWeight(Param.OurPrestige);
-        value += gameState.EnemyPlayer.Prestige * GetWeight(Param.EnemyPrestige);
+        value += afterRoundPoints * GetWeight(Param.Prestige);
+        value -= gameState.EnemyPlayer.Prestige * GetWeight(Param.Prestige);
         return value;
     }
     double PatronsBonuses(SeededGameState gameState)
@@ -88,8 +101,8 @@ public class GameStrategy
                 {
                     ourPatrons += 1;
                 }
-
-                val += PatronTierList.GetPatronTier(patron, currentGamePhase).favoured;
+                if (patron == PatronId.DUKE_OF_CROWS) val += PatronTierList.GetPatronTier(patron, currentGamePhase).favoured * GetWeight(Param.Crow);
+                if (patron == PatronId.ANSEI) val += PatronTierList.GetPatronTier(patron, currentGamePhase).favoured * GetWeight(Param.Ansei);
             }
             else if (owner == PlayerEnum.NO_PLAYER_SELECTED)
             {
@@ -97,12 +110,13 @@ public class GameStrategy
                 {
                     enemyPatronDist += 1;
                 }
-
-                val += PatronTierList.GetPatronTier(patron, currentGamePhase).neutral;
+                if (patron == PatronId.DUKE_OF_CROWS) val += PatronTierList.GetPatronTier(patron, currentGamePhase).neutral * GetWeight(Param.Crow);
+                if (patron == PatronId.ANSEI) val += PatronTierList.GetPatronTier(patron, currentGamePhase).neutral * GetWeight(Param.Ansei);
             }
             else
             {
-                val += PatronTierList.GetPatronTier(patron, currentGamePhase).unfavoured;
+                if (patron == PatronId.DUKE_OF_CROWS) val += PatronTierList.GetPatronTier(patron, currentGamePhase).unfavoured * GetWeight(Param.Crow);
+                if (patron == PatronId.ANSEI) val += PatronTierList.GetPatronTier(patron, currentGamePhase).unfavoured * GetWeight(Param.Ansei);
             }
         }
         if (enemyPatronDist == 1) return 3 * heuristicMin;
@@ -114,7 +128,6 @@ public class GameStrategy
 
     double CardsValues(SeededGameState gameState)
     {
-        int cardLimit = Math.Max(cardCount, (int)GetWeight(Param.CardLimit));
         double value = 0;
 
         var ourCardsDraw = gameState.CurrentPlayer.DrawPile;
@@ -129,15 +142,15 @@ public class GameStrategy
         var enemyCardsCooldown = gameState.EnemyPlayer.CooldownPile;
         var enemyCards = enemyCardsDraw.Concat(enemyCardsHand.Concat(enemyCardsPlayed.Concat(enemyCardsCooldown)));
 
+        double wspOur = Math.Min(1.0, GetWeight(Param.CardLimit) / (double)ourCards.Count());
+        double wspEnemy = Math.Min(1.0, GetWeight(Param.CardLimit) / (double)enemyCards.Count());
+
         var ourCombos = new Dictionary<PatronId, int>();
         var enemyCombos = new Dictionary<PatronId, int>();
 
-        int ourCardsCount = ourCardsHand.Count + ourCardsDraw.Count + ourCardsPlayed.Count + ourCardsCooldown.Count;
-        value -= Math.Max((ourCardsCount - cardLimit) * GetWeight(Param.OverCardLimitPenalty), 0);
-
         foreach (UniqueCard card in ourCards)
         {
-            value += GPCardTierList.GetCardTier((int)card.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
+            value += GPCardTierList.GetCardTier((int)card.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier) * wspOur;
             if (card.Deck != PatronId.TREASURY)
             {
                 if (ourCombos.ContainsKey(card.Deck))
@@ -153,7 +166,7 @@ public class GameStrategy
 
         foreach (UniqueCard card in enemyCards)
         {
-            value -= GPCardTierList.GetCardTier((int)card.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier);
+            value -= GPCardTierList.GetCardTier((int)card.CommonId, currentGamePhase) * GetWeight(Param.TierMultiplier) * wspEnemy;
             if (card.Deck != PatronId.TREASURY)
             {
                 if (enemyCombos.ContainsKey(card.Deck))
@@ -167,6 +180,7 @@ public class GameStrategy
             }
         }
 
+        List<double> agentBonuses = new();
         foreach (SerializedAgent agent in gameState.CurrentPlayer.Agents)
         {
             if (agent.RepresentingCard.Type != CardType.CONTRACT_AGENT)
@@ -181,10 +195,11 @@ public class GameStrategy
                     ourCombos[agent.RepresentingCard.Deck] = 1;
                 }
             }
-            value += agent.CurrentHp * GetWeight(Param.OurPrestige) + GetWeight(Param.OurAgent);
+            double toAdd = agent.CurrentHp * GetWeight(Param.Prestige) * GetWeight(Param.OurAgent);
+            agentBonuses.Add(toAdd);
+            value += toAdd;
         }
 
-        // Jak jest contract to pewnie trzeba zobaczyć czy zabijamy
         foreach (SerializedAgent agent in gameState.EnemyPlayer.Agents)
         {
             if (agent.RepresentingCard.Type != CardType.CONTRACT_AGENT)
@@ -199,17 +214,18 @@ public class GameStrategy
                     enemyCombos[agent.RepresentingCard.Deck] = 1;
                 }
             }
-            value += AgentTier.GetCardTier(agent.RepresentingCard.CommonId) * GetWeight(Param.EnemyAgent); // moze cos jeszcze zwiazanego z hp
+            value += AgentTier.GetCardTier(agent.RepresentingCard.CommonId) * GetWeight(Param.EnemyAgent) * (((double)agent.CurrentHp + 2) / ((double)agent.RepresentingCard.HP) + 2);
+            // to u gory nie jestem pewiem
         }
 
-        value += CombosValue(ourCombos) - CombosValue(enemyCombos);
+        value += CombosValue(ourCombos, wspOur) - CombosValue(enemyCombos, wspEnemy);
 
         foreach (UniqueCard card in gameState.CurrentPlayer.KnownUpcomingDraws.Take(3))
         {
             value += HandTierList.GetCardTier(card.CommonId) * GetWeight(Param.UpcomingCard);
             if (ourCombos.ContainsKey(card.Deck))
             {
-                value += ourCombos[card.Deck] * GetWeight(Param.KnowingCardCombo);
+                value += ourCombos[card.Deck] * GetWeight(Param.KnowingCardCombo) * wspOur;
             }
         }
 
@@ -218,19 +234,27 @@ public class GameStrategy
             value -= HandTierList.GetCardTier(card.CommonId) * GetWeight(Param.UpcomingCard);
             if (enemyCombos.ContainsKey(card.Deck))
             {
-                value -= ourCombos[card.Deck] * GetWeight(Param.KnowingCardCombo);
+                value -= ourCombos[card.Deck] * GetWeight(Param.KnowingCardCombo) * wspEnemy;
             }
         }
 
+        int howManyToCut = 0;
         foreach (UniqueCard card in gameState.TavernAvailableCards)
         {
             if (card.Type != CardType.CONTRACT_ACTION && card.Type != CardType.CONTRACT_AGENT)
             {
                 value += enemyCardEvaluation(card, gameState) * GetWeight(Param.TavernPenatly);
             }
+            if (card.CommonId == CardId.AMBUSH) howManyToCut += 2;
+            if (card.CommonId == CardId.BLACK_SACRAMENT) howManyToCut += 1;
         }
-
+        agentBonuses.Sort();
+        agentBonuses.Reverse();
         // Kara za knockout agent w tawernie jeśli mamy agentów
+        foreach (double v in agentBonuses.Take(howManyToCut))
+        {
+            value -= v * (0.75);
+        }
 
         return value;
     }
@@ -284,26 +308,7 @@ public class GameStrategy
         return ((double)Math.Clamp(result + heuristicMax, 0.0, 2.0 * heuristicMax) / (2.0 * heuristicMax));
     }
 
-    // double CombosValue(Dictionary<PatronId, int> dict)
-    // {
-    //     double val = 0;
-    //     int cnt = 0;
-    //     foreach (KeyValuePair<PatronId, int> el in dict)
-    //     {
-    //         cnt += el.Value;
-    //     }
-    //     double wsp = 1;
-    //     if (cnt > GetWeight(Param.CardLimit))
-    //     {
-    //         wsp = GetWeight(Param.CardLimit) / cnt;
-    //     }
-    //     foreach (KeyValuePair<PatronId, int> el in dict)
-    //     {
-    //         val += comboBonus[Math.Min(comboBonus.Count - 1, el.Value)] + Math.Max(0, (el.Value - comboBonus.Count) * stalaCoriolisa); // moze dodac wspolczynnik
-    //     }
-    //     return val * wsp;
-    // }
-    double CombosValue(Dictionary<PatronId, int> dict)
+    double CombosValue(Dictionary<PatronId, int> dict, double wsp = 1)
     {
         double val = 0;
         int cnt = 0;
@@ -311,14 +316,12 @@ public class GameStrategy
         {
             cnt += el.Value;
         }
-        double wsp = 1;
         if (cnt > GetWeight(Param.CardLimit))
         {
             wsp = GetWeight(Param.CardLimit) / cnt;
         }
         foreach (KeyValuePair<PatronId, int> el in dict)
         {
-            if (el.Key == PatronId.ANSEI) continue;
             val += Math.Pow(wsp * el.Value, GetWeight(Param.ComboPower));
         }
         return val;
@@ -398,13 +401,13 @@ public enum GamePhase
 
 public enum Param
 {
-    OurPrestige,
-    EnemyPrestige,
+    Ansei,
+    Crow,
+    Prestige,
     CardLimit,
     ComboPower,
     OurAgent,
     EnemyAgent,
-    OverCardLimitPenalty,
     UpcomingCard,
     TierMultiplier,
     KnowingCardCombo,

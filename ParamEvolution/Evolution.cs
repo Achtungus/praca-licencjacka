@@ -5,9 +5,9 @@ namespace ParamEvolution;
 public class Generation
 {
     static readonly Random rnd = new Random();
-    const int generationSize = 15;
-    const int noOfChildren = 75;
-    const int noOfFights = 10;
+    const int generationSize = 10;
+    const int noOfChildren = 40;
+    const int noOfFights = 15;
     const double crossoverProbability = 0.7;
     int noOfGeneration = 0;
     List<int> scores = new();
@@ -64,11 +64,8 @@ public class Generation
                 for (ulong k = 0; k < noOfFights; k++)
                 {
                     var cMCTS = new BestMCTS(children[childIdx], seedzik[k]);
-                    var enemy = new BeamSearchBot();
-                    var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cMCTS, enemy);
-                    // var cMCTS = new BestMCTS(children[childIdx], seedzik[k]);
-                    // var cgMCTS = new BestMCTS(currentGeneration[0], seedzik2[k]);
-                    // var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cMCTS, cgMCTS);
+                    var cgMCTS = new BestMCTS(currentGeneration[0], seedzik2[k]);
+                    var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cMCTS, cgMCTS);
                     game.Seed = initSeed + k + 1;
                     var (endState, endBoardState) = game.Play();
                     if (endState.Winner == PlayerEnum.PLAYER1) Interlocked.Increment(ref wins[childIdx]);
@@ -85,11 +82,8 @@ public class Generation
                 for (ulong k = 0; k < noOfFights; k++)
                 {
                     var cMCTS = new BestMCTS(children[childIdx], seedzik2[k]);
-                    var enemy = new BeamSearchBot();
-                    var game = new ScriptsOfTribute.AI.ScriptsOfTribute(enemy, cMCTS);
-                    // var cMCTS = new BestMCTS(children[childIdx], seedzik2[k]);
-                    // var cgMCTS = new BestMCTS(currentGeneration[0], seedzik[k]);
-                    // var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cgMCTS, cMCTS);
+                    var cgMCTS = new BestMCTS(currentGeneration[0], seedzik[k]);
+                    var game = new ScriptsOfTribute.AI.ScriptsOfTribute(cgMCTS, cMCTS);
                     game.Seed = initSeed + k + 1;
                     var (endState, endBoardState) = game.Play();
                     if (endState.Winner == PlayerEnum.PLAYER2) Interlocked.Increment(ref wins[childIdx]);
@@ -129,10 +123,10 @@ public class Generation
             scores.Add(newWins[i].Item1);
         }
 
-        wins.Reverse();
+        newWins.Reverse();
         for (int i = 0; i < noOfWorst; i++)
         {
-            best.Add(children[newWins[i].Item2].Mutate(0.8, 0.4));
+            best.Add(children[newWins[i].Item2].Mutate(0.6, 0.4));
             scores.Add(newWins[i].Item1);
         }
 

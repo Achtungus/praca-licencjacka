@@ -24,14 +24,22 @@ public class GameParams
     {
         foreach (var (param, values) in defaultGameParams)
         {
-            gameParams.Add(param, new double[] { values[0], values[1], values[2] });
+            gameParams[param] = new double[] { values[0], values[1], values[2] };
+        }
+    }
+
+    public GameParams(GameParams oth)
+    {
+        foreach (var (param, values) in oth.gameParams)
+        {
+            gameParams[param] = new double[] { values[0], values[1], values[2] };
         }
     }
 
     public GameParams Mutate(double chance, double maxEps)
     {
-        GameParams newParams = new();
-        foreach (var key in newParams.gameParams.Keys)
+        GameParams newParams = new(gameParams);
+        foreach (var key in defaultGameParams.Keys)
         {
             for (int j = 0; j < 3; j++)
             {

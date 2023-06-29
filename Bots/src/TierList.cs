@@ -177,7 +177,7 @@ public static class GPCardTierList
         new int[] { B, A, B }, // 42 Card: "Hel Shira Herald",
         new int[] { A, A, A }, // 43 Card: "March on Hattu",
         new int[] { B, B, B }, // 44 Card: "Shehai Summoning",
-        new int[] { A, A, B }, // 45 Card: "Warrior Wave",
+        new int[] { S, A, B }, // 45 Card: "Warrior Wave",
         new int[] { B, A, B }, // 46 Card: "Ansei Assault",
         new int[] { B, A, B }, // 47 Card: "Ansei's Victory",
         new int[] { C, B, B }, // 48 Card: "Battle Meditation",

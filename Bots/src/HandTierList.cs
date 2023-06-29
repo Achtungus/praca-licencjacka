@@ -48,7 +48,7 @@ public static class HandTierList
         { CardId.HEL_SHIRA_HERALD, S },
         { CardId.MARCH_ON_HATTU,   S },
         { CardId.SHEHAI_SUMMONING, S },
-        { CardId.WARRIOR_WAVE,     C },
+        { CardId.WARRIOR_WAVE,     B },
         { CardId.ANSEI_ASSAULT,    A },
         { CardId.ANSEIS_VICTORY,   S },
         { CardId.NO_SHIRA_POET,    C },

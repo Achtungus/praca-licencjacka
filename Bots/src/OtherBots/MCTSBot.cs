@@ -349,7 +349,6 @@ public class Node
 
 public class MCTSBot : AI
 {
-
     Node? actRoot;
     Node? actNode;
     bool startOfTurn;
